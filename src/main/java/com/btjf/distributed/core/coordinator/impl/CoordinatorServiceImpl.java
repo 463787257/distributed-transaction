@@ -92,7 +92,7 @@ public class CoordinatorServiceImpl implements CoordinatorService {
     }
 
     private void initCoordinatorPool() {
-        QUEUE = new LinkedBlockingQueue(constants.getCoordinatorQueueMax());
+        QUEUE = new LinkedBlockingQueue();
         executorService = Executors.newFixedThreadPool(CommonConstant.coordinatorThreadMax);
         executorService.execute(() -> execute());
     }
@@ -226,7 +226,7 @@ public class CoordinatorServiceImpl implements CoordinatorService {
     @Override
     public Boolean processMessage(MessageContent message) {
         try {
-            if (message.getRetriedCount() > constants.getRetriedCount()) {
+            if (message.getRetriedCount() > constants.getRetriedCount() || !Objects.equals(message.getDistributedInvocation().getDistributedStatusEnum(), DistributedStatusEnum.PRE_FAILURE)) {
                 return Boolean.FALSE;
             }
             handlerMessage(message);
@@ -235,6 +235,7 @@ public class CoordinatorServiceImpl implements CoordinatorService {
                     DistributedStatusEnum.SUCCESS,
                     message.getDistributedInvocation().getTargetClass().getName(),
                     message.getDistributedInvocation().getMethodName());
+            message.getDistributedInvocation().setDistributedStatusEnum(DistributedStatusEnum.SUCCESS);
             submit(new CoordinatorAction(CoordinatorActionEnum.SAVE, log));
         } catch (Throwable throwable) {
             //执行失败，设置失败原因和重试次数

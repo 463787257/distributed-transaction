@@ -33,12 +33,6 @@ public class Constants {
     private String serializerType;
 
     /**
-     * 日志异步队列大小
-     */
-    @Value("${coordinator.queue.max}")
-    private Integer coordinatorQueueMax;
-
-    /**
      * 重试次数
      */
     @Value("${retried.count}")

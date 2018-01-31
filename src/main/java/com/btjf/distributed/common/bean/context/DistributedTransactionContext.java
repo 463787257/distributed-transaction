@@ -41,6 +41,9 @@ public class DistributedTransactionContext implements Serializable {
      * */
     private Map<String, List<DistributedInvocation>> map = new ConcurrentHashMap<>();
 
+    /**
+     * 添加通过RPC调用的方法
+     * */
     public void addInvocationChain(DistributedInvocation distributedInvocation) {
         if (distributedInvocation != null) {
             distributedInvocationList.add(distributedInvocation);
@@ -48,6 +51,9 @@ public class DistributedTransactionContext implements Serializable {
         }
     }
 
+    /**
+     * 添加通过RPC调用的方法
+     * */
     public void addInvocationChainList(DistributedInvocation distributedInvocation) {
         c:for (int i = distributedInvocationList.size() - 1; i >= 0; i ++) {
             DistributedInvocation k = distributedInvocationList.get(i);

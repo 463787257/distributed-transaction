@@ -31,7 +31,3 @@ serializer:
 #事物补偿时，MQ重发次数
 retried:
   count: 3
-
-coordinator:
-  queue:
-    max: 10
