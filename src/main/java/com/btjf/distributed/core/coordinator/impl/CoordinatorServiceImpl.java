@@ -54,9 +54,8 @@ public class CoordinatorServiceImpl implements CoordinatorService {
     @Resource
     private Producer producer;
 
-    private static BlockingQueue<CoordinatorAction> QUEUE;
-    private ExecutorService executorService;
-    //private ObjectSerializer serializer;
+    private static final BlockingQueue<CoordinatorAction> QUEUE = new LinkedBlockingQueue();
+    private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(CommonConstant.coordinatorThreadMax);
 
     @PostConstruct
     public void init() {
@@ -67,16 +66,6 @@ public class CoordinatorServiceImpl implements CoordinatorService {
     }
 
     private void initSpi() {
-        //spi  serialize
-        /*final SerializeEnum serializeEnum = SerializeEnum.acquire(constants.getSerializerType());
-        final ServiceLoader<ObjectSerializer> objectSerializers = ServiceBootstrap.loadAll(ObjectSerializer.class);
-        final Optional<ObjectSerializer> serializer = StreamSupport.stream(objectSerializers.spliterator(),
-                true).filter(objectSerializer -> Objects.equals(objectSerializer.getScheme(), serializeEnum)).findFirst();
-        serializer.ifPresent(serialize -> {
-            SpringBeanUtils.getInstance().registerBean(ObjectSerializer.class.getName(), serialize);
-            //注入后赋值，当前类用@Resource无效
-            this.serializer = serialize;
-        });*/
         //初始化spi，根据配置文件选择可用的存储方式
         ServiceLoader<CoordinatorRepository> recoverRepositories = ServiceLoader.load(CoordinatorRepository.class);
 
@@ -92,9 +81,7 @@ public class CoordinatorServiceImpl implements CoordinatorService {
     }
 
     private void initCoordinatorPool() {
-        QUEUE = new LinkedBlockingQueue();
-        executorService = Executors.newFixedThreadPool(CommonConstant.coordinatorThreadMax);
-        executorService.execute(() -> execute());
+        EXECUTOR_SERVICE.execute(() -> execute());
     }
 
     /**
@@ -114,7 +101,6 @@ public class CoordinatorServiceImpl implements CoordinatorService {
                 logger.error("exec record log happen error,error message: " + e.getMessage(), e);
             }
         }
-
     }
 
     /**
@@ -227,6 +213,12 @@ public class CoordinatorServiceImpl implements CoordinatorService {
     public Boolean processMessage(MessageContent message) {
         try {
             if (message.getRetriedCount() > constants.getRetriedCount() || !Objects.equals(message.getDistributedInvocation().getDistributedStatusEnum(), DistributedStatusEnum.PRE_FAILURE)) {
+                //执行失败 保存失败的日志
+                final DistributedTransactionInfo log = buildTransactionLog(message.getTransID(), "failue",
+                        DistributedStatusEnum.FAILURE,
+                        message.getDistributedInvocation().getTargetClass().getName(),
+                        message.getDistributedInvocation().getMethodName());
+                submit(new CoordinatorAction(CoordinatorActionEnum.SAVE, log));
                 return Boolean.FALSE;
             }
             handlerMessage(message);
@@ -240,12 +232,6 @@ public class CoordinatorServiceImpl implements CoordinatorService {
         } catch (Throwable throwable) {
             //执行失败，设置失败原因和重试次数
             message.setRetriedCount(message.getRetriedCount() + 1);
-            //执行失败 保存失败的日志
-            final DistributedTransactionInfo log = buildTransactionLog(message.getTransID(), "failue",
-                    DistributedStatusEnum.FAILURE,
-                    message.getDistributedInvocation().getTargetClass().getName(),
-                    message.getDistributedInvocation().getMethodName());
-            submit(new CoordinatorAction(CoordinatorActionEnum.SAVE, log));
             processMessage(message);
         } finally {
             if (TransactionContextLocal.getInstance().get() != null) {
