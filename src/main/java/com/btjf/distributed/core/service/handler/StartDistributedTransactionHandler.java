@@ -36,15 +36,13 @@ public class StartDistributedTransactionHandler implements DistributedTransactio
         try {
             distributedTransactionManager.begin(point);
             Object proceed = point.proceed();
-            distributedTransactionManager.commitStatus(point);
+            distributedTransactionManager.successTransaction();
             return proceed;
         } catch (Throwable throwable) {
             //更新失败的日志信息
             distributedTransactionManager.failTransaction(point, throwable.getMessage());
             throw throwable;
         } finally {
-            //事物更新成commit状态，除非上面try里面的commit也失败了
-            distributedTransactionManager.successTransaction();
             //发送消息
             distributedTransactionManager.sendMessage();
             distributedTransactionManager.cleanThreadLocal();

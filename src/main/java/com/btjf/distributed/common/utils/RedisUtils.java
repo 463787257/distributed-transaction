@@ -3,6 +3,7 @@ package com.btjf.distributed.common.utils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import redis.clients.jedis.*;
 
@@ -24,10 +25,15 @@ public class RedisUtils {
     // 数据源
     @Resource
     private ShardedJedisPool shardedJedisPool;
-    @Resource
+    /*@Resource
     private JedisShardInfo jedisShardInfo;
     @Resource
-    private JedisPoolConfig jedisPoolConfig;
+    private JedisPoolConfig jedisPoolConfig;*/
+
+    @Autowired
+    private RedisUtils(ShardedJedisPool shardedJedisPool) {
+        this.shardedJedisPool = shardedJedisPool;
+    }
 
     /**
      * 默认发送redis消息的队列（RedisConsumer注解不传入内容时）

@@ -23,19 +23,19 @@ public class Constants {
     /**
      * 项目name，作为消息的topic
      * */
-    @Value("${spring.application.name}")
-    private String applicationName;
+    //@Value("${spring.application.name}")
+    private String applicationName = "applicationName" + Math.random() * 100;
 
-    @Value("${distributed.transaction.repository.type}")
-    private String repositorySupportType;
+    //@Value("${distributed.transaction.repository.type}")
+    private String repositorySupportType = "dataBase";
 
-    @Value("${serializer.type}")
+    //@Value("${serializer.type}")
     private String serializerType;
 
     /**
      * 重试次数
      */
-    @Value("${retried.count}")
-    private Integer retriedCount;
+    //@Value("${retried.count}")
+    private Integer retriedCount = 3;
 
 }

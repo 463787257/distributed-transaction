@@ -20,14 +20,14 @@
         <javaTypeResolver>
             <property name="forceBigDecimals" value="false" />
         </javaTypeResolver>
-        <javaModelGenerator targetPackage="com.btjf.distributed.core.spi.model" targetProject="src/main/java">
+        <javaModelGenerator targetPackage="com.btjf.distributed.test.one.model" targetProject="src/main/java">
             <property name="enableSubPackages" value="true"/>
             <property name="trimStrings" value="true"/>
         </javaModelGenerator>
-        <sqlMapGenerator targetPackage="com.btjf.distributed.core.spi.mapper" targetProject="src/main/java">
+        <sqlMapGenerator targetPackage="com.btjf.distributed.test.one.mapper" targetProject="src/main/java">
             <property name="enableSubPackages" value="true"/>
         </sqlMapGenerator>
-        <javaClientGenerator targetPackage="com.btjf.distributed.core.spi.mapper"
+        <javaClientGenerator targetPackage="com.btjf.distributed.test.one.mapper"
                              targetProject="src/main/java"
                              type="XMLMAPPER">
             <property name="enableSubPackages" value="true"/>
@@ -42,7 +42,7 @@
         <!--</table>-->
         <!---->
         <!--MidAutuCardGiveRecord-->
-        <table tableName="s_distributed_transaction" domainObjectName="DistributedTransactionData">
+        <table tableName="transaction_test_one" domainObjectName="TransactionTestOne">
             <property name="useActualColumnNames" value="true"/>
             <!--<generatedKey column="FID" sqlStatement="SqlServer" identity="true"/>
             <columnRenamingRule searchString="^F" replaceString=""/>-->

@@ -15,9 +15,9 @@ import org.aspectj.lang.ProceedingJoinPoint;
 public interface DistributedTransactionAspectService {
 
     /**
-     * myth事务切面服务
+     * distributed事务切面服务
      *
-     * @param distributedTransactionContext myth事务上下文对象
+     * @param distributedTransactionContext distributed事务上下文对象
      * @param point                 切点
      * @return object
      * @throws Throwable 异常信息

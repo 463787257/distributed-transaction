@@ -31,7 +31,7 @@ import javax.annotation.Resource;
 public class ConsumerLoaderProcessor implements BeanPostProcessor {
 
     @Resource
-    private EventManagementConfig eventManagementConfig;
+    private EventManagementConfig eventManagementConfig;// = new EventManagementConfig("192.168.100.131:9876", "");
     @Resource
     private Constants constants;
 
