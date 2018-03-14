@@ -1,2 +1,0 @@
-com.btjf.distributed.core.spi.repository.JdbcCoordinatorRepository
-com.btjf.distributed.core.spi.repository.RedisCoordinatorRepository

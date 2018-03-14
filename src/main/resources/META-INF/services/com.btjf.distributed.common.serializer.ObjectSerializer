@@ -1,4 +1,0 @@
-com.btjf.distributed.common.serializer.KryoSerializer
-com.btjf.distributed.common.serializer.ProtostuffSerializer
-com.btjf.distributed.common.serializer.HessianSerializer
-com.btjf.distributed.common.serializer.JavaSerializer
