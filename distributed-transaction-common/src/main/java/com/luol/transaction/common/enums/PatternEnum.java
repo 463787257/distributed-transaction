@@ -39,6 +39,12 @@ public enum PatternEnum implements BaseEnum {
     }
 
     public static PatternEnum objectOf(Object object) {
+        if (object instanceof String) {
+            PatternEnum patternEnum = PatternEnum.valueOf(object.toString());
+            if (Objects.nonNull(patternEnum)) {
+                return patternEnum;
+            }
+        }
         Optional<PatternEnum> enums = Arrays.stream(PatternEnum.values())
                 .filter(v -> Objects.equals(v.getContent(), object) || Objects.equals(v.getValue(), object))
                 .findFirst();

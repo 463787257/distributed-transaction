@@ -1,9 +1,9 @@
-package com.luol.transaction.core.disruptor.translator;
+package com.luol.transaction.notify.disruptor.logs.translator;
 
 import com.lmax.disruptor.EventTranslatorOneArg;
 import com.luol.transaction.common.bean.model.NtcTransaction;
 import com.luol.transaction.common.enums.EventTypeEnum;
-import com.luol.transaction.core.disruptor.event.NtcTransactionLogs;
+import com.luol.transaction.notify.disruptor.logs.event.NtcTransactionLogs;
 
 /**
  * @author luol

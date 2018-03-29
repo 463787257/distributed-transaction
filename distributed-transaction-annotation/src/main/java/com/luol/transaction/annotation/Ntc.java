@@ -29,4 +29,14 @@ public @interface Ntc {
      * */
     String cancelMethod() default "";
 
+    /**
+     * 重试最大次数
+     * */
+    int maxRetryCounts() default 10;
+
+    /**
+     * 碰到异常直接回滚的异常集合
+     * */
+    Class<? extends Throwable>[] rollbackFor() default {};
+
 }

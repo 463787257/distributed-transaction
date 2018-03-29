@@ -12,5 +12,12 @@
     <groupId>com.luol</groupId>
     <artifactId>distributed-transaction-notify</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.luol</groupId>
+            <artifactId>distributed-transaction-annotation</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+    </dependencies>
 
 </project>

@@ -14,8 +14,10 @@ import com.luol.transaction.common.bean.model.NtcTransaction;
 public class Main {
     public static void main(String[] args) throws Exception {
         NtcTransactionEventPublisher ntcTransactionEventPublisher = new NtcTransactionEventPublisher(1024);
-        ntcTransactionEventPublisher.publishEvent(new NtcTransaction(), 1);
-        ntcTransactionEventPublisher.publishEvent(new NtcTransaction(), 0);
+        for (int i = 0; i < 100; i++) {
+            Thread.sleep(10);
+            ntcTransactionEventPublisher.publishEvent(new NtcTransaction(), i);
+        }
         ntcTransactionEventPublisher.destroy();
     }
 }

@@ -4,15 +4,15 @@ import com.luol.transaction.annotation.Ntc;
 import com.luol.transaction.common.bean.context.NtcTransactionContext;
 import com.luol.transaction.common.bean.entity.NtcInvocation;
 import com.luol.transaction.common.bean.model.NtcTransaction;
+import com.luol.transaction.common.concurrent.threadlocal.TransactionContextLocal;
 import com.luol.transaction.common.enums.EventTypeEnum;
 import com.luol.transaction.common.enums.NtcRoleEnum;
 import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.common.enums.PatternEnum;
-import com.luol.transaction.common.utils.SpringBeanUtils;
-import com.luol.transaction.core.concurrent.threadlocal.TransactionContextLocal;
-import com.luol.transaction.core.disruptor.publisher.NtcTransactionLogsPublisher;
+import com.luol.transaction.common.utils.InvokeUtils;
+import com.luol.transaction.notify.disruptor.invocation.publisher.NtcTransactionInvocationPublisher;
+import com.luol.transaction.notify.disruptor.logs.publisher.NtcTransactionLogsPublisher;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.reflect.MethodUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
@@ -45,6 +45,9 @@ public class NtcTransactionManager {
     @Resource
     private NtcTransactionLogsPublisher ntcTransactionLogsPublisher;
 
+    @Resource
+    private NtcTransactionInvocationPublisher ntcTransactionInvocationPublisher;
+
     /**
      * 事物是否开启---根据当前线程中是否存在context来判断
      * */
@@ -66,6 +69,9 @@ public class NtcTransactionManager {
         //构建事物对象
         final NtcTransaction ntcTransaction = buildNtcTransaction(NtcRoleEnum.START, null, pattern);
 
+        ntcTransaction.setMaxRetryCounts(ntc.maxRetryCounts());
+        ntcTransaction.setRollbackFor(ntc.rollbackFor());
+
         //将事务对象保存在threadLocal中
         CURRENT.set(ntcTransaction);
 
@@ -79,7 +85,7 @@ public class NtcTransactionManager {
         return ntcTransaction;
     }
 
-    private NtcTransaction buildNtcTransaction(NtcRoleEnum ntcRoleEnum, String transID, PatternEnum pattern) {
+    public NtcTransaction buildNtcTransaction(NtcRoleEnum ntcRoleEnum, String transID, PatternEnum pattern) {
         NtcTransaction ntcTransaction;
         if (StringUtils.isNotBlank(transID)) {
             ntcTransaction = new NtcTransaction(transID);
@@ -101,7 +107,7 @@ public class NtcTransactionManager {
     }
 
     /**
-     * 走自己的cancel
+     * 走自己的cancel todo 重写
      * */
     public void cancel(ProceedingJoinPoint point) {
         LOGGER.warn("开始执行cancel方法！");
@@ -119,7 +125,7 @@ public class NtcTransactionManager {
             cancelMethod = method.getName() + "Cancel";
         }
         try {
-            executeParticipantMethod(new NtcInvocation(clazz, cancelMethod, parameterTypes, args));
+            InvokeUtils.executeParticipantMethod(new NtcInvocation(clazz, cancelMethod, parameterTypes, args));
             LOGGER.warn("执行cancel方法成功！");
         } catch (Throwable throwable) {
             //todo cancel方法放入队列中进行重试---并记录数据库，成功后修改状态
@@ -129,17 +135,32 @@ public class NtcTransactionManager {
     }
 
     /**
-     * 反射调用下级的cancel
+     * 反射调用下级的cancel todo 重写
      * */
     public void cancel() {
+
         NtcTransaction currentTransaction = getCurrentTransaction();
+
+        if (Objects.isNull(currentTransaction)) {
+            return;
+        }
 
         //更新失败的日志信息 todo
         ntcTransactionLogsPublisher.publishEvent(currentTransaction, EventTypeEnum.UPDATE);
 
         //调用下级cancel todo
         if (!CollectionUtils.isEmpty(currentTransaction.getRpcNtcInvocations())) {
-
+            currentTransaction.getRpcNtcInvocations().forEach(ntcInvocation -> {
+                try {
+                    if (!ntcInvocation.getIsSuccess()) {
+                        InvokeUtils.executeParticipantMethod(ntcInvocation);
+                        LOGGER.warn("执行cancel方法成功！");
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn("{} 方法的cancel方法执行失败！", ntcInvocation.getMethodName());
+                    LOGGER.warn("失败信息：", e);
+                }
+            });
         }
         //更新失败的日志信息为成功 todo
         currentTransaction.setNtcStatusEnum(NtcStatusEnum.SUCCESS);
@@ -152,8 +173,9 @@ public class NtcTransactionManager {
     public void sendMessage() {
         NtcTransaction currentTransaction = getCurrentTransaction();
         //当前事物不为空，且模式为优先补偿才发送消息
-        if (Objects.nonNull(currentTransaction) && Objects.equals(currentTransaction.getPatternEnum(), PatternEnum.NOTICE_ROLLBACK)) {
-            //todo spi加载，优先级：rocketMQ--->redis--->jdk;异步通知反射调用
+        if (Objects.nonNull(currentTransaction)) {
+            //jdk异步通知反射调用
+            ntcTransactionInvocationPublisher.publishEvent(currentTransaction);
         }
     }
 
@@ -170,26 +192,10 @@ public class NtcTransactionManager {
         }
     }*/
 
-    /**
-     * 传入转化好的需要反射调用的model类
-     * */
-    private void executeParticipantMethod(NtcInvocation ntcInvocation) throws Exception {
-        if (Objects.nonNull(ntcInvocation)) {
-            final Class clazz = ntcInvocation.getTargetClass();
-            final String method = ntcInvocation.getMethodName();
-            final Object[] args = ntcInvocation.getArgs();
-            final Class[] parameterTypes = ntcInvocation.getParameterTypes();
-            //todo 目测枚举不用区分开
-            /*if (args != null && args.length > 0) {
-                for (int i = 0; i < parameterTypes.length ; i++) {
-                    if (parameterTypes[i].isEnum()) {
-                        args[i] = Enum.valueOf(parameterTypes[i], args[i].toString());
-                    }
-                }
-            }*/
-            final Object bean = SpringBeanUtils.getInstance().getBean(clazz);
-            MethodUtils.invokeMethod(bean, method, args, parameterTypes);
+    public void enlistParticipant(Method method, Class clazz, Object[] arguments, Class[] args, Boolean aTrue) {
+        NtcTransaction currentTransaction = getCurrentTransaction();
+        if (Objects.nonNull(currentTransaction)) {
+            currentTransaction.addRpcNtcInvocations(new NtcInvocation(clazz, method.getName(), args, arguments, aTrue));
         }
     }
-
 }

@@ -1,4 +1,4 @@
-package com.luol.transaction.core.disruptor.publisher;
+package com.luol.transaction.notify.disruptor.logs.publisher;
 
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.YieldingWaitStrategy;
@@ -6,10 +6,11 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.luol.transaction.common.bean.model.NtcTransaction;
 import com.luol.transaction.common.enums.EventTypeEnum;
-import com.luol.transaction.core.disruptor.event.NtcTransactionLogs;
-import com.luol.transaction.core.disruptor.factory.NtcTransactionLogsFactory;
-import com.luol.transaction.core.disruptor.handler.NtcTransactionLogsHandler;
-import com.luol.transaction.core.disruptor.translator.NtcTransactionLogsTranslator;
+import com.luol.transaction.notify.disruptor.logs.event.NtcTransactionLogs;
+import com.luol.transaction.notify.disruptor.logs.factory.NtcTransactionLogsFactory;
+import com.luol.transaction.notify.disruptor.logs.handler.NtcTransactionLogsExceptionHandler;
+import com.luol.transaction.notify.disruptor.logs.handler.NtcTransactionLogsHandler;
+import com.luol.transaction.notify.disruptor.logs.translator.NtcTransactionLogsTranslator;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
@@ -33,14 +34,18 @@ public class NtcTransactionLogsPublisher implements InitializingBean,DisposableB
     @Resource
     private NtcTransactionLogsHandler ntcTransactionLogsHandler;
 
+    @Resource
+    private NtcTransactionLogsExceptionHandler ntcTransactionLogsExceptionHandler;
+
     @Override
     public void afterPropertiesSet() throws Exception {
         disruptor = new Disruptor<>(new NtcTransactionLogsFactory(),
                         1024, r -> {
                     AtomicInteger index = new AtomicInteger(1);
-                    return new Thread(null, r, "disruptor-thread-" + index.getAndIncrement());
+                    return new Thread(null, r, "disruptor-logs-thread-" + index.getAndIncrement());
                 }, ProducerType.MULTI, new YieldingWaitStrategy());
         disruptor.handleEventsWith(ntcTransactionLogsHandler);
+        disruptor.setDefaultExceptionHandler(ntcTransactionLogsExceptionHandler);
         disruptor.start();
     }
 

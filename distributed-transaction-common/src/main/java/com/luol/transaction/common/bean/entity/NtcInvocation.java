@@ -3,6 +3,7 @@ package com.luol.transaction.common.bean.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 import java.io.Serializable;
 
@@ -40,4 +41,16 @@ public class NtcInvocation implements Serializable {
      * 参数
      * */
     private Object[] args;
+
+    /**
+     * 是否成功
+     * */
+    private Boolean isSuccess;
+
+    public NtcInvocation(Class<?> clazz, String cancelMethod, Class<?>[] parameterTypes, Object[] args) {
+        this.targetClass = clazz;
+        this.methodName = cancelMethod;
+        this.parameterTypes = parameterTypes;
+        this.args = args;
+    }
 }

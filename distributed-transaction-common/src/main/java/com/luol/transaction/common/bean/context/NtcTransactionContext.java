@@ -1,5 +1,6 @@
 package com.luol.transaction.common.bean.context;
 
+import com.luol.transaction.common.enums.NtcRoleEnum;
 import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.common.enums.PatternEnum;
 import lombok.Data;
@@ -35,6 +36,11 @@ public class NtcTransactionContext implements Serializable {
      * */
     private PatternEnum patternEnum;
 
+    /**
+     * 执行角色
+     * */
+    private NtcRoleEnum ntcRoleEnum;
+
     public String getTransID() {
         return transID;
     }
@@ -51,11 +57,6 @@ public class NtcTransactionContext implements Serializable {
         if (Objects.nonNull(ntcStatusEnum)) {
             if (ntcStatusEnum instanceof NtcStatusEnum) {
                 this.ntcStatusEnum = (NtcStatusEnum)ntcStatusEnum;
-            } else if (ntcStatusEnum instanceof String) {
-                this.ntcStatusEnum = NtcStatusEnum.valueOf(ntcStatusEnum.toString());
-                if (Objects.isNull(this.ntcStatusEnum)) {
-                    this.ntcStatusEnum = NtcStatusEnum.objectOf(ntcStatusEnum);
-                }
             } else {
                 this.ntcStatusEnum = NtcStatusEnum.objectOf(ntcStatusEnum);
             }
@@ -70,13 +71,22 @@ public class NtcTransactionContext implements Serializable {
         if (Objects.nonNull(patternEnum)) {
             if (patternEnum instanceof PatternEnum) {
                 this.patternEnum = (PatternEnum)patternEnum;
-            } else if (patternEnum instanceof String) {
-                this.patternEnum = PatternEnum.valueOf(patternEnum.toString());
-                if (Objects.isNull(this.patternEnum)) {
-                    this.patternEnum = PatternEnum.objectOf(patternEnum);
-                }
             } else {
                 this.patternEnum = PatternEnum.objectOf(patternEnum);
+            }
+        }
+    }
+
+    public NtcRoleEnum getNtcRoleEnum() {
+        return ntcRoleEnum;
+    }
+
+    public void setNtcRoleEnum(Object ntcRoleEnum) {
+        if (Objects.nonNull(ntcRoleEnum)) {
+            if (ntcRoleEnum instanceof NtcRoleEnum) {
+                this.ntcRoleEnum = (NtcRoleEnum)ntcRoleEnum;
+            } else if (ntcRoleEnum instanceof String) {
+                this.ntcRoleEnum = NtcRoleEnum.objectOf(ntcRoleEnum);
             }
         }
     }

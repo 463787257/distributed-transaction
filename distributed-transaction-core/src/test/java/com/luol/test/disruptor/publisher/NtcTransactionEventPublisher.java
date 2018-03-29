@@ -22,10 +22,12 @@ package com.luol.test.disruptor.publisher;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.luol.test.disruptor.event.NtcTransactionEvent;
 import com.luol.test.disruptor.factory.NtcTransactionEventFactory;
 import com.luol.test.disruptor.handler.NtcTransactionEventHandler;
+import com.luol.test.disruptor.handler.TestHandler;
 import com.luol.test.disruptor.translator.NtcTransactionEventTranslator;
 import com.luol.transaction.common.bean.model.NtcTransaction;
 import org.springframework.beans.factory.DisposableBean;
@@ -57,7 +59,8 @@ public class NtcTransactionEventPublisher implements DisposableBean {
                     return new Thread(null, r, "disruptor-thread-" + index.getAndIncrement());
                 }, ProducerType.MULTI, new YieldingWaitStrategy());
 
-        disruptor.handleEventsWith(ntcTransactionEventHandler);
+        EventHandlerGroup<NtcTransactionEvent> ntcTransactionEventEventHandlerGroup = disruptor.handleEventsWith(ntcTransactionEventHandler);
+        ntcTransactionEventEventHandlerGroup.then(new TestHandler());
         disruptor.start();
     }
 

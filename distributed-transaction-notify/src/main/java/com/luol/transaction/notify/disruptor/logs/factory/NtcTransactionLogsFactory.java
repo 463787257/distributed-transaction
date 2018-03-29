@@ -1,7 +1,7 @@
-package com.luol.transaction.core.disruptor.factory;
+package com.luol.transaction.notify.disruptor.logs.factory;
 
 import com.lmax.disruptor.EventFactory;
-import com.luol.transaction.core.disruptor.event.NtcTransactionLogs;
+import com.luol.transaction.notify.disruptor.logs.event.NtcTransactionLogs;
 
 /**
  * @author luol

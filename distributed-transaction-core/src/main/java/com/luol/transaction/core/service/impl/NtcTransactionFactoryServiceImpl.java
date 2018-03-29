@@ -1,6 +1,7 @@
 package com.luol.transaction.core.service.impl;
 
 import com.luol.transaction.common.bean.context.NtcTransactionContext;
+import com.luol.transaction.common.enums.NtcRoleEnum;
 import com.luol.transaction.core.service.NtcTransactionFactoryService;
 import com.luol.transaction.core.service.handler.LocalNtcTransactionHandler;
 import com.luol.transaction.core.service.handler.NtcTransactionManager;
@@ -37,11 +38,11 @@ public class NtcTransactionFactoryServiceImpl implements NtcTransactionFactorySe
         //如果事务还没开启或者 ntc事务上下文是空， 那么应该进入发起调用
         if (!ntcTransactionManager.isBegin() && Objects.isNull(context)) {
             return StartNtcTransactionHandler.class;
-        } else if (ntcTransactionManager.isBegin() && Objects.isNull(context)) {
-            return LocalNtcTransactionHandler.class;
-        } else if (Objects.nonNull(context)) {
+        } else {
+            if (Objects.equals(context.getNtcRoleEnum(), NtcRoleEnum.LOCAL)) {
+                return LocalNtcTransactionHandler.class;
+            }
             return ProviderNtcTransactionHandler.class;
         }
-        return LocalNtcTransactionHandler.class;
     }
 }

@@ -47,25 +47,28 @@ public class NtcTransaction implements Serializable {
     private PatternEnum patternEnum;
 
     /**
+     * 通知+回滚模式---最大重试次数
+     * */
+    private Integer maxRetryCounts;
+
+    /**
+     * 通知+回滚模式---异常直接回滚集合
+     * */
+    private Class<? extends Throwable>[] rollbackFor;
+
+    /**
      * RPC调用ntc方法集合
      * */
     private List<NtcInvocation> rpcNtcInvocations;
 
-    /**
-     * 所有调用ntc方法集合 todo 好像没啥用处
-     * */
-    //private List<NtcInvocation> allNtcInvocations;
-
     public NtcTransaction() {
         this.transID = IDWorkerUtils.getInstance().createUUID();
         rpcNtcInvocations = Lists.newCopyOnWriteArrayList();
-        //allNtcInvocations = Lists.newCopyOnWriteArrayList();
     }
 
     public NtcTransaction(String transID) {
         this.transID = transID;
         rpcNtcInvocations = Lists.newCopyOnWriteArrayList();
-        //allNtcInvocations = Lists.newCopyOnWriteArrayList();
     }
 
     /**
@@ -74,12 +77,5 @@ public class NtcTransaction implements Serializable {
     public void addRpcNtcInvocations(NtcInvocation ntcInvocation) {
         rpcNtcInvocations.add(ntcInvocation);
     }
-
-    /**
-     * aop中调用
-     * */
-    /*public void addAllNtcInvocations(NtcInvocation ntcInvocation) {
-        allNtcInvocations.add(ntcInvocation);
-    }*/
 
 }

@@ -1,9 +1,14 @@
 package com.luol.transaction.core.service.handler;
 
 import com.luol.transaction.common.bean.context.NtcTransactionContext;
+import com.luol.transaction.common.bean.model.NtcTransaction;
+import com.luol.transaction.common.enums.EventTypeEnum;
+import com.luol.transaction.common.enums.NtcRoleEnum;
 import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.common.enums.PatternEnum;
+import com.luol.transaction.common.utils.DefaultValueUtils;
 import com.luol.transaction.core.service.NtcTransactionHandler;
+import com.luol.transaction.notify.disruptor.logs.publisher.NtcTransactionLogsPublisher;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
@@ -26,6 +31,9 @@ public class ProviderNtcTransactionHandler implements NtcTransactionHandler {
     @Resource
     private NtcTransactionManager ntcTransactionManager;
 
+    @Resource
+    private NtcTransactionLogsPublisher ntcTransactionLogsPublisher;
+
     /**
      * 分布式事务处理接口
      *
@@ -37,42 +45,25 @@ public class ProviderNtcTransactionHandler implements NtcTransactionHandler {
     @Override
     public Object handler(ProceedingJoinPoint point, NtcTransactionContext ntcTransactionContext) throws Throwable {
         if (Objects.equals(ntcTransactionContext.getPatternEnum(), PatternEnum.NOTICE_ROLLBACK)) {
-            try {
-                return point.proceed();
-            } catch (Throwable throwable) {
-                //todo 更新失败日志
-
-                throw throwable;
-            }
+            //更新日志 -- 通知 todo
+            return point.proceed();
         } else {
             if (Objects.equals(ntcTransactionContext.getNtcStatusEnum(), NtcStatusEnum.CANCEL)) {
                 ntcTransactionManager.cancel(point);
             } else {
-                //todo 添加日志
-
+                //更新日志 -- cancel todo
+                addLogs(ntcTransactionContext, NtcStatusEnum.CANCEL);
                 return point.proceed();
             }
         }
         Method method = ((MethodSignature) (point.getSignature())).getMethod();
-        return getDefaultValue(method.getReturnType());
+        return DefaultValueUtils.getDefaultValue(method.getReturnType());
     }
 
-    private Object getDefaultValue(Class type) {
-        if (boolean.class.equals(type)) {
-            return false;
-        } else if (byte.class.equals(type)) {
-            return 0;
-        } else if (short.class.equals(type)) {
-            return 0;
-        } else if (int.class.equals(type)) {
-            return 0;
-        } else if (long.class.equals(type)) {
-            return 0;
-        } else if (float.class.equals(type)) {
-            return 0;
-        } else if (double.class.equals(type)) {
-            return 0;
-        }
-        return null;
+    private void addLogs(NtcTransactionContext ntcTransactionContext, NtcStatusEnum ntcStatusEnum) {
+        NtcTransaction ntcTransaction = ntcTransactionManager.buildNtcTransaction(NtcRoleEnum.PROVIDER, ntcTransactionContext.getTransID(), ntcTransactionContext.getPatternEnum());
+        ntcTransaction.setNtcStatusEnum(ntcStatusEnum);
+        ntcTransactionLogsPublisher.publishEvent(ntcTransaction, EventTypeEnum.SAVE);
     }
+
 }

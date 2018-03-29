@@ -2,13 +2,15 @@ package com.luol.transaction.core.service.handler;
 
 import com.luol.transaction.common.bean.context.NtcTransactionContext;
 import com.luol.transaction.common.bean.model.NtcTransaction;
+import com.luol.transaction.common.concurrent.threadlocal.TransactionContextLocal;
 import com.luol.transaction.common.enums.EventTypeEnum;
 import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.common.enums.PatternEnum;
-import com.luol.transaction.core.concurrent.threadlocal.TransactionContextLocal;
-import com.luol.transaction.core.disruptor.publisher.NtcTransactionLogsPublisher;
 import com.luol.transaction.core.service.NtcTransactionHandler;
+import com.luol.transaction.notify.disruptor.logs.publisher.NtcTransactionLogsPublisher;
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -30,6 +32,8 @@ public class StartNtcTransactionHandler implements NtcTransactionHandler {
 
     @Resource
     private NtcTransactionLogsPublisher ntcTransactionLogsPublisher;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(StartNtcTransactionHandler.class);
 
     /**
      * 分布式事务处理接口
@@ -56,29 +60,16 @@ public class StartNtcTransactionHandler implements NtcTransactionHandler {
             ntcTransaction.setNtcStatusEnum(NtcStatusEnum.TRY_END);
             //更新日志状态---发起者，try完成
             ntcTransactionLogsPublisher.publishEvent(ntcTransaction, EventTypeEnum.UPDATE);
-        } catch (Throwable throwable) {
             isSucess = Boolean.FALSE;
-            NtcTransactionContext context = TransactionContextLocal.getInstance().get();
-            if (Objects.nonNull(context)) {
-                if (Objects.equals(context.getPatternEnum(), PatternEnum.ONLY_ROLLBACK)){
-                    ntcTransaction.setNtcStatusEnum(NtcStatusEnum.CANCEL);
-                    context.setNtcStatusEnum(NtcStatusEnum.CANCEL);
-                    //异常执行cancel---发起者只需要调用下级cancel就好了 todo 想走异步
-                    ntcTransactionManager.cancel();
-                } else{
-                    context.setNtcStatusEnum(NtcStatusEnum.NOTIFY);
-                    ntcTransaction.setNtcStatusEnum(NtcStatusEnum.NOTIFY);
-                }
-            }
-            throw throwable;
+            return returnValue;
         } finally {
             //发送消息
-            if (!isSucess) {
+            if (isSucess) {
                 ntcTransactionManager.sendMessage();
             }
             ntcTransactionManager.cleanThreadLocal();
             TransactionContextLocal.getInstance().remove();
+            LOGGER.warn("执行ntc事务结束！end");
         }
-        return returnValue;
     }
 }

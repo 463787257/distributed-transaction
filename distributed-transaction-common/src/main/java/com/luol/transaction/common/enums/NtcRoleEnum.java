@@ -40,6 +40,12 @@ public enum NtcRoleEnum implements BaseEnum {
     }
 
     public static NtcRoleEnum objectOf(Object object) {
+        if (object instanceof String) {
+            NtcRoleEnum ntcRoleEnum = NtcRoleEnum.valueOf(object.toString());
+            if (Objects.nonNull(ntcRoleEnum)) {
+                return ntcRoleEnum;
+            }
+        }
         Optional<NtcRoleEnum> enums = Arrays.stream(NtcRoleEnum.values())
                 .filter(v -> Objects.equals(v.getContent(), object) || Objects.equals(v.getValue(), object))
                 .findFirst();

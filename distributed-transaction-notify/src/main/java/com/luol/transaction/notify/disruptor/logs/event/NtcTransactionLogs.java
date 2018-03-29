@@ -1,4 +1,4 @@
-package com.luol.transaction.core.disruptor.event;
+package com.luol.transaction.notify.disruptor.logs.event;
 
 import com.luol.transaction.common.bean.model.NtcTransaction;
 import com.luol.transaction.common.enums.EventTypeEnum;

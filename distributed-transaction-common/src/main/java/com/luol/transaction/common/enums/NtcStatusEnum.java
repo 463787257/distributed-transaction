@@ -41,6 +41,12 @@ public enum NtcStatusEnum implements BaseEnum {
     }
 
     public static NtcStatusEnum objectOf(Object object) {
+        if (object instanceof String) {
+            NtcStatusEnum ntcStatusEnum = NtcStatusEnum.valueOf(object.toString());
+            if (Objects.nonNull(ntcStatusEnum)) {
+                return ntcStatusEnum;
+            }
+        }
         Optional<NtcStatusEnum> enums = Arrays.stream(NtcStatusEnum.values())
                 .filter(v -> Objects.equals(v.getContent(), object) || Objects.equals(v.getValue(), object))
                 .findFirst();
