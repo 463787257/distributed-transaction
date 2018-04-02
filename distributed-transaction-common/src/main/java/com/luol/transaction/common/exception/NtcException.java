@@ -8,19 +8,19 @@ package com.luol.transaction.common.exception;
  * @describe 版本描述：
  * @modifyLog 修改日志：
  */
-public class NtcRuntimeException extends RuntimeException {
+public class NtcException extends RuntimeException {
 
-    public NtcRuntimeException() {}
+    public NtcException() {}
 
-    public NtcRuntimeException(String message) {
+    public NtcException(String message) {
         super(message);
     }
 
-    public NtcRuntimeException(String message, Throwable cause) {
+    public NtcException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public NtcRuntimeException(Throwable cause) {
+    public NtcException(Throwable cause) {
         super(cause);
     }
 }

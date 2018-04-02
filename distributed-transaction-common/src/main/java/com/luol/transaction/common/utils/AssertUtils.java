@@ -16,7 +16,7 @@
  */
 package com.luol.transaction.common.utils;
 
-import com.luol.transaction.common.exception.NtcRuntimeException;
+import com.luol.transaction.common.exception.NtcException;
 
 /**
  * @author xiaoyu
@@ -29,19 +29,19 @@ public class AssertUtils {
 
     public static void notNull(Object obj, String message) {
         if (obj == null) {
-            throw new NtcRuntimeException(message);
+            throw new NtcException(message);
         }
     }
 
     public static void notNull(Object obj) {
         if (obj == null) {
-            throw new NtcRuntimeException("argument invalid,Please check");
+            throw new NtcException("argument invalid,Please check");
         }
     }
 
     public static void checkConditionArgument(boolean condition, String message) {
         if (!condition) {
-            throw new NtcRuntimeException(message);
+            throw new NtcException(message);
         }
     }
 

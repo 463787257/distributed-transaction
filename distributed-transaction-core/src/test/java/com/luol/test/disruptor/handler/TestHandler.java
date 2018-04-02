@@ -15,6 +15,6 @@ import com.luol.test.disruptor.event.NtcTransactionEvent;
 public class TestHandler  implements EventHandler<NtcTransactionEvent> {
     @Override
     public void onEvent(NtcTransactionEvent ntcTransactionEvent, long l, boolean b) throws Exception {
-        System.out.println("我是测试：" + JSON.toJSONString(ntcTransactionEvent));
+        System.out.println(Thread.currentThread().getId() + "我是测试：" + JSON.toJSONString(ntcTransactionEvent));
     }
 }

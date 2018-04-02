@@ -16,10 +16,10 @@ import java.util.Optional;
  */
 public enum NtcStatusEnum implements BaseEnum {
 
-    TRY_BEGIN("try阶段开始", 1),
-    TRY_END("try阶段完成", 2),
-    CANCEL("cancel阶段", 3),
-    NOTIFY("通知阶段", 4),
+    TRY("try阶段", 1),
+    CANCEL("cancel阶段", 2),
+    NOTIFY("通知阶段", 3),
+    FAIL("失败阶段", 4),
     SUCCESS("成功阶段", 5);
 
     private String content;
@@ -50,6 +50,6 @@ public enum NtcStatusEnum implements BaseEnum {
         Optional<NtcStatusEnum> enums = Arrays.stream(NtcStatusEnum.values())
                 .filter(v -> Objects.equals(v.getContent(), object) || Objects.equals(v.getValue(), object))
                 .findFirst();
-        return enums.orElse(NtcStatusEnum.TRY_BEGIN);
+        return enums.orElse(NtcStatusEnum.TRY);
     }
 }

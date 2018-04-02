@@ -36,7 +36,7 @@ public class StartNtcTransactionHandler implements NtcTransactionHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(StartNtcTransactionHandler.class);
 
     /**
-     * 分布式事务处理接口
+     * 分布式事务处理接口 todo 日志状态更新后，上下文也要跟着更新
      *
      * @param point                 point 切点
      * @param ntcTransactionContext ntc事务上下文
@@ -57,12 +57,16 @@ public class StartNtcTransactionHandler implements NtcTransactionHandler {
             //调用当前调用方法
             returnValue = point.proceed();
 
-            ntcTransaction.setNtcStatusEnum(NtcStatusEnum.TRY_END);
+            ntcTransaction.setNtcStatusEnum(NtcStatusEnum.SUCCESS);
             //更新日志状态---发起者，try完成
             ntcTransactionLogsPublisher.publishEvent(ntcTransaction, EventTypeEnum.UPDATE);
             isSucess = Boolean.FALSE;
             return returnValue;
-        } finally {
+        } catch (Throwable throwable) {
+            ntcTransaction.setNtcStatusEnum(NtcStatusEnum.CANCEL);
+            ntcTransaction.setPatternEnum(PatternEnum.ONLY_ROLLBACK);
+            throw throwable;
+        }finally {
             //发送消息
             if (isSucess) {
                 ntcTransactionManager.sendMessage();

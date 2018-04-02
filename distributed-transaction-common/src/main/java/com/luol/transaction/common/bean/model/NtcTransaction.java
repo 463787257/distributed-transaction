@@ -5,12 +5,17 @@ import com.luol.transaction.common.bean.entity.NtcInvocation;
 import com.luol.transaction.common.enums.NtcRoleEnum;
 import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.common.enums.PatternEnum;
-import com.luol.transaction.common.utils.IDWorkerUtils;
+import com.luol.transaction.common.exception.NtcException;
+import com.luol.transaction.common.utils.IDGenUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author luol
@@ -52,6 +57,11 @@ public class NtcTransaction implements Serializable {
     private Integer maxRetryCounts;
 
     /**
+     * 通知+回滚模式---当前重试次数
+     * */
+    private Integer currentRetryCounts;
+
+    /**
      * 通知+回滚模式---异常直接回滚集合
      * */
     private Class<? extends Throwable>[] rollbackFor;
@@ -61,14 +71,46 @@ public class NtcTransaction implements Serializable {
      * */
     private List<NtcInvocation> rpcNtcInvocations;
 
+    /**
+     * 调用接口名称
+     */
+    private String targetClass;
+
+
+    /**
+     * 调用方法名称
+     */
+    private String targetMethod;
+
+    /**
+     * 创建时间
+     */
+    private Date createTime;
+
+    /**
+     * 版本号 乐观锁控制
+     */
+    private Integer version = 1;
+
+    /**
+     * 更新时间
+     */
+    private Date lastTime;
+
     public NtcTransaction() {
-        this.transID = IDWorkerUtils.getInstance().createUUID();
+        this.transID = IDGenUtils.get().createID();
         rpcNtcInvocations = Lists.newCopyOnWriteArrayList();
+        currentRetryCounts = NumberUtils.INTEGER_ZERO;
+        this.createTime = new Date();
+        this.lastTime = new Date();
     }
 
     public NtcTransaction(String transID) {
         this.transID = transID;
         rpcNtcInvocations = Lists.newCopyOnWriteArrayList();
+        currentRetryCounts = NumberUtils.INTEGER_ZERO;
+        this.createTime = new Date();
+        this.lastTime = new Date();
     }
 
     /**

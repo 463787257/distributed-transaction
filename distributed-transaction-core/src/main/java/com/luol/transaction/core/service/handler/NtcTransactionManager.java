@@ -65,12 +65,15 @@ public class NtcTransactionManager {
         Method method = signature.getMethod();
         Ntc ntc = method.getAnnotation(Ntc.class);
         PatternEnum pattern = ntc.pattern();
+        Class<?> clazz = point.getTarget().getClass();
 
         //构建事物对象
         final NtcTransaction ntcTransaction = buildNtcTransaction(NtcRoleEnum.START, null, pattern);
 
         ntcTransaction.setMaxRetryCounts(ntc.maxRetryCounts());
         ntcTransaction.setRollbackFor(ntc.rollbackFor());
+        ntcTransaction.setTargetClass(clazz.getName());
+        ntcTransaction.setTargetMethod(method.getName());
 
         //将事务对象保存在threadLocal中
         CURRENT.set(ntcTransaction);
@@ -78,7 +81,7 @@ public class NtcTransactionManager {
         //设置ntc事务上下文，这个类会传递给远端
         NtcTransactionContext context = new NtcTransactionContext();
         context.setTransID(ntcTransaction.getTransID());
-        context.setNtcStatusEnum(NtcStatusEnum.TRY_BEGIN);
+        context.setNtcStatusEnum(NtcStatusEnum.TRY);
         context.setPatternEnum(pattern);
         TransactionContextLocal.getInstance().set(context);
 
@@ -92,7 +95,7 @@ public class NtcTransactionManager {
         } else {
             ntcTransaction = new NtcTransaction();
         }
-        ntcTransaction.setNtcStatusEnum(NtcStatusEnum.TRY_BEGIN);
+        ntcTransaction.setNtcStatusEnum(NtcStatusEnum.TRY);
         ntcTransaction.setNtcRoleEnum(ntcRoleEnum);
         ntcTransaction.setPatternEnum(pattern);
         return ntcTransaction;

@@ -19,5 +19,7 @@ public class NtcTransactionInvocationTranslator implements EventTranslatorOneArg
         ntcTransactionInvocation.setTransID(ntcTransaction.getTransID());
         ntcTransactionInvocation.setPatternEnum(ntcTransaction.getPatternEnum());
         ntcTransactionInvocation.setRpcNtcInvocations(ntcTransaction.getRpcNtcInvocations());
+        ntcTransactionInvocation.setMaxRetryCounts(ntcTransaction.getMaxRetryCounts());
+        ntcTransactionInvocation.setCurrentRetryCounts(ntcTransaction.getCurrentRetryCounts());
     }
 }

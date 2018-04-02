@@ -38,7 +38,7 @@ public class NtcTransactionEventHandler implements EventHandler<NtcTransactionEv
     public void onEvent(NtcTransactionEvent ntcTransactionEvent,
                         long sequence, boolean endOfBatch)
             throws Exception {
-        System.out.println("handler : " + JSON.toJSONString(ntcTransactionEvent));
+        System.out.println(Thread.currentThread().getId() + "handler : " + JSON.toJSONString(ntcTransactionEvent));
         //ntcTransactionEvent.clear();
     }
 }

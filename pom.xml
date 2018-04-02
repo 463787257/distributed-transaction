@@ -38,6 +38,7 @@
         <protostuff.version>1.0.8</protostuff.version>
         <guava.version>21.0</guava.version>
         <disruptor.version>3.4.0</disruptor.version>
+        <spring.data.mongodb.version>1.9.1.RELEASE</spring.data.mongodb.version>
     </properties>
 
 
@@ -153,6 +154,12 @@
             <groupId>com.lmax</groupId>
             <artifactId>disruptor</artifactId>
             <version>${disruptor.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-mongodb</artifactId>
+            <version>${spring.data.mongodb.version}</version>
         </dependency>
     </dependencies>
 

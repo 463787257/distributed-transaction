@@ -25,7 +25,7 @@ public @interface Ntc {
     PatternEnum pattern() default PatternEnum.NOTICE_ROLLBACK;
 
     /**
-     * 回滚方法名称
+     * 回滚方法名称 --- 默认是正常方法名+Cancel
      * */
     String cancelMethod() default "";
 
@@ -35,7 +35,7 @@ public @interface Ntc {
     int maxRetryCounts() default 10;
 
     /**
-     * 碰到异常直接回滚的异常集合
+     * 碰到异常直接回滚的异常集合  todo 提供者 - 捕获后全部抛出 NtcException.class
      * */
     Class<? extends Throwable>[] rollbackFor() default {};
 

@@ -17,6 +17,7 @@ import java.util.List;
  */
 @Data
 public class NtcTransactionInvocation implements Serializable {
+
     private static final long serialVersionUID = -4625787946912880404L;
 
     /**

@@ -8,6 +8,12 @@ package com.luol.transaction.common.constant;
  * @describe 版本描述：
  * @modifyLog 修改日志：
  */
-public class CommonConstant {
-    public static final String NTC_TRANSACTION_CONTEXT = "NTC_TRANSACTION_CONTEXT";
+public interface CommonConstant {
+    String PATH_SUFFIX = "/ntc";
+
+    String DB_SUFFIX = "ntc_";
+
+    String RECOVER_REDIS_KEY_PRE="ntc:transaction:%s";
+
+    String NTC_TRANSACTION_CONTEXT = "NTC_TRANSACTION_CONTEXT";
 }

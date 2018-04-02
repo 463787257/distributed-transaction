@@ -35,7 +35,7 @@ public class ProviderNtcTransactionHandler implements NtcTransactionHandler {
     private NtcTransactionLogsPublisher ntcTransactionLogsPublisher;
 
     /**
-     * 分布式事务处理接口
+     * 分布式事务处理接口 todo 如果异常是注解上的异常，则对异常进行封装   --- 日志记录，执行状态用上下文传过来的对象
      *
      * @param point                 point 切点
      * @param ntcTransactionContext ntc事务上下文

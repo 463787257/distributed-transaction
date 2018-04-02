@@ -23,7 +23,7 @@ import java.util.Objects;
  * @author luol
  * @date 2018/3/27
  * @time 9:57
- * @function 功能：
+ * @function 功能：todo 对象 NtcTransactionInvocationPublisher --- NtcTransactionInvocationHandler 间相互引用了
  * @describe 版本描述：
  * @modifyLog 修改日志：
  */
@@ -68,12 +68,17 @@ public class NtcTransactionInvocationHandler implements EventHandler<NtcTransact
                 if (flag) {
                     //重新排队，重复调用，并记录当前调用几次 todo
                     if (Objects.isNull(ntcTransactionInvocationPublisher)) {
-                        NtcTransactionInvocationPublisher ntcTransactionInvocationPublisher = SpringBeanUtils.getInstance().getBean(NtcTransactionInvocationPublisher.class);
+                        final NtcTransactionInvocationPublisher ntcTransactionInvocationPublisher = SpringBeanUtils.getInstance().getBean(NtcTransactionInvocationPublisher.class);
                         this.ntcTransactionInvocationPublisher = ntcTransactionInvocationPublisher;
                     }
                     NtcTransaction ntcTransaction = new NtcTransaction();
-                    ntcTransaction.setPatternEnum(ntcTransactionInvocation.getPatternEnum());
+                    if (!bool && ntcTransactionInvocation.getCurrentRetryCounts() > ntcTransactionInvocation.getMaxRetryCounts()) {
+                        ntcTransaction.setPatternEnum(PatternEnum.ONLY_ROLLBACK);
+                    } else {
+                        ntcTransaction.setPatternEnum(ntcTransactionInvocation.getPatternEnum());
+                    }
                     ntcTransaction.setRpcNtcInvocations(ntcTransactionInvocation.getRpcNtcInvocations());
+                    ntcTransaction.setCurrentRetryCounts(ntcTransactionInvocation.getCurrentRetryCounts());
                     ntcTransactionInvocationPublisher.publishEvent(ntcTransaction);
                 }
                 LOGGER.warn("{} 模式执行结束!", ntcTransactionInvocation.getPatternEnum().getContent());

@@ -6,11 +6,14 @@ import com.luol.transaction.annotation.Ntc;
 import com.luol.transaction.common.bean.context.NtcTransactionContext;
 import com.luol.transaction.common.bean.model.NtcTransaction;
 import com.luol.transaction.common.concurrent.threadlocal.TransactionContextLocal;
+import com.luol.transaction.common.enums.EventTypeEnum;
 import com.luol.transaction.common.enums.NtcRoleEnum;
+import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.common.enums.PatternEnum;
 import com.luol.transaction.common.utils.DefaultValueUtils;
 import com.luol.transaction.common.utils.SpringBeanUtils;
 import com.luol.transaction.core.service.handler.NtcTransactionManager;
+import com.luol.transaction.notify.disruptor.logs.publisher.NtcTransactionLogsPublisher;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -59,6 +62,7 @@ public class NtcInvokerInvocationHandler extends InvokerInvocationHandler {
                 if (Objects.isNull(ntcTransactionContext) || Objects.equals(ntcTransactionContext.getPatternEnum(), PatternEnum.ONLY_ROLLBACK)) {
                     throw throwable;
                 }
+                //todo 异常修改
                 NtcTransaction ntcTransaction = ntcTransactionManager.getCurrentTransaction();
                 if (Objects.nonNull(ntcTransaction.getRollbackFor()) && ntcTransaction.getRollbackFor().length > 0) {
                     for (Class<? extends Throwable> claz : ntcTransaction.getRollbackFor()) {
@@ -71,7 +75,9 @@ public class NtcInvokerInvocationHandler extends InvokerInvocationHandler {
                         }
                     }
                 }
-                //todo 需要记录下错误日志
+                NtcTransactionLogsPublisher ntcTransactionLogsPublisher = SpringBeanUtils.getInstance().getBean(NtcTransactionLogsPublisher.class);
+                ntcTransaction.setNtcStatusEnum(NtcStatusEnum.NOTIFY);
+                ntcTransactionLogsPublisher.publishEvent(ntcTransaction, EventTypeEnum.UPDATE);
                 return DefaultValueUtils.getDefaultValue(method.getReturnType());
             }
         } else {
