@@ -1,11 +1,15 @@
 package com.luol.transaction.common.bean.adapter;
 
+import com.alibaba.fastjson.JSON;
+import com.luol.transaction.common.bean.model.NtcTransaction;
 import com.luol.transaction.common.enums.NtcRoleEnum;
 import com.luol.transaction.common.enums.NtcStatusEnum;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * @author luol
@@ -17,7 +21,9 @@ import java.util.Date;
  */
 @Data
 @NoArgsConstructor
-public class CoordinatorRepositoryAdapter {
+public class CoordinatorRepositoryAdapter implements Serializable {
+
+    private static final long serialVersionUID = -7893918782889019370L;
 
     /**
      * 事务ID
@@ -84,9 +90,21 @@ public class CoordinatorRepositoryAdapter {
      * */
     private String rpcCallChain;
 
-    /**
-     * 模块名称
-     * */
-    private String modelName;
+    public CoordinatorRepositoryAdapter(NtcTransaction ntcTransaction) {
+        if (Objects.isNull(ntcTransaction)) {
+            return;
+        }
+        this.transID = ntcTransaction.getTransID();
+        this.createTime = ntcTransaction.getCreateTime();
+        this.lastTime = Objects.isNull(ntcTransaction.getLastTime()) ? new Date() : ntcTransaction.getLastTime();
+        this.currentRetryCounts = ntcTransaction.getCurrentRetryCounts();
+        this.maxRetryCounts = ntcTransaction.getMaxRetryCounts();
+        this.status = Objects.nonNull(ntcTransaction.getNtcStatusEnum()) ? ntcTransaction.getNtcStatusEnum().getValue() : null;
+        this.role = Objects.nonNull(ntcTransaction.getNtcRoleEnum()) ? ntcTransaction.getNtcRoleEnum().getValue() : null;
+        this.pattern = Objects.nonNull(ntcTransaction.getPatternEnum()) ? ntcTransaction.getPatternEnum().getValue() : null;
+        this.targetClass = ntcTransaction.getTargetClass();
+        this.targetMethod = ntcTransaction.getTargetMethod();
+        this.rpcCallChain = JSON.toJSONString(ntcTransaction.getRpcNtcInvocations());
+    }
 
 }

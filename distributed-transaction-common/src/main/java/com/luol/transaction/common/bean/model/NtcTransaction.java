@@ -76,7 +76,6 @@ public class NtcTransaction implements Serializable {
      */
     private String targetClass;
 
-
     /**
      * 调用方法名称
      */

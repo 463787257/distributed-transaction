@@ -12,11 +12,12 @@ import java.util.List;
  * @author luol
  * @date 2018/3/30
  * @time 15:16
- * @function 功能：
+ * @function 功能：todo 当前日志细化到项目上 ，后面增加调用链长度时，日志也要细化
  * @describe 版本描述：
  * @modifyLog 修改日志：
  */
 public interface CoordinatorRepository {
+
     /**
      * 创建本地事务对象
      *
@@ -33,7 +34,6 @@ public interface CoordinatorRepository {
      */
     int remove(String transID);
 
-
     /**
      * 更新数据
      *
@@ -43,53 +43,23 @@ public interface CoordinatorRepository {
      */
     int update(NtcTransaction ntcTransaction) throws NtcException;
 
-
-    /**
-     * 更新事务失败日志
-     * @param ntcTransaction 实体对象
-     * @return rows 1 成功
-     * @throws NtcException 异常信息
-     */
-    int updateFailTransaction(NtcTransaction ntcTransaction) throws  NtcException;
-
-
-    /**
-     * 更新 List<Participant>  只更新这一个字段数据
-     *
-     * @param ntcTransaction 实体对象
-     * @return rows 1 成功
-     * @throws NtcException 异常
-     */
-    int updateParticipant(NtcTransaction ntcTransaction) throws NtcException;
-
-
-    /**
-     * 更新补偿数据状态
-     *
-     * @param transId 事务id
-     * @param status  状态
-     * @return rows 1 成功
-     * @throws NtcException 异常
-     */
-    int updateStatus(String transId, Integer status) throws NtcException;
-
     /**
      * 根据id获取对象
      *
      * @param transID transID
      * @return NtcTransaction
      */
-    NtcTransaction findByTransId(String transID);
-
+    NtcTransaction findByTransID(String transID);
 
     /**
-     * 获取延迟多长时间后的事务信息,只要为了防止并发的时候，刚新增的数据被执行
+     * 根据id,类名，方法名获取对象
      *
-     * @param date 延迟后的时间
-     * @return List<NtcTransaction>
+     * @param transID transID
+     * @param targetClass 类名
+     * @param targetMethod 方法名
+     * @return NtcTransaction
      */
-    List<NtcTransaction> listAllByDelay(Date date);
-
+    NtcTransaction getByTransIDAndName(String transID, String targetClass, String targetMethod);
 
     /**
      * 初始化操作
@@ -105,7 +75,6 @@ public interface CoordinatorRepository {
      * @return scheme 命名
      */
     RepositorySupportEnum getScheme();
-
 
     /**
      * 设置序列化信息

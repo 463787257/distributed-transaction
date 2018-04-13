@@ -1,0 +1,2 @@
+com.luol.transaction.common.spi.impl.RedisCoordinatorRepository
+com.luol.transaction.common.spi.impl.MongoCoordinatorRepository

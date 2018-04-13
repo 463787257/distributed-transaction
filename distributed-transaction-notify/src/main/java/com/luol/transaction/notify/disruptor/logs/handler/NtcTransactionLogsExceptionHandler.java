@@ -1,10 +1,14 @@
 package com.luol.transaction.notify.disruptor.logs.handler;
 
 import com.lmax.disruptor.ExceptionHandler;
+import com.luol.transaction.common.utils.SpringBeanUtils;
 import com.luol.transaction.notify.disruptor.logs.event.NtcTransactionLogs;
+import com.luol.transaction.notify.disruptor.logs.publisher.NtcTransactionLogsPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import java.util.Objects;
 
 /**
  * @author luol
@@ -19,9 +23,18 @@ public class NtcTransactionLogsExceptionHandler implements ExceptionHandler<NtcT
 
     private final static Logger LOGER = LoggerFactory.getLogger(NtcTransactionLogsExceptionHandler.class);
 
+    private NtcTransactionLogsPublisher ntcTransactionLogsPublisher;
+
     @Override
     public void handleEventException(Throwable throwable, long l, NtcTransactionLogs ntcTransactionLogs) {
         LOGER.warn("异步日志操作出现异常，异常信息：", throwable);
+        if (Objects.isNull(ntcTransactionLogsPublisher)) {
+            ntcTransactionLogsPublisher = SpringBeanUtils.getInstance().getBean(NtcTransactionLogsPublisher.class);
+        }
+        //todo 日志异常走MQ，MQ日常再重新走JDK
+        if (Objects.nonNull(ntcTransactionLogs)) {
+            ntcTransactionLogsPublisher.publishEvent(ntcTransactionLogs.getNtcTransaction(), ntcTransactionLogs.getEventTypeEnum());
+        }
     }
 
     @Override

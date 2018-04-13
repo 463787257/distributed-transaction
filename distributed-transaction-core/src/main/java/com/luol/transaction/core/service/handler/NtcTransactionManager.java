@@ -101,6 +101,14 @@ public class NtcTransactionManager {
         return ntcTransaction;
     }
 
+    public void addLogs(NtcRoleEnum ntcRoleEnum, NtcTransactionContext ntcTransactionContext, NtcStatusEnum ntcStatusEnum, EventTypeEnum eventTypeEnum) {
+        NtcTransaction ntcTransaction = buildNtcTransaction(ntcRoleEnum, ntcTransactionContext.getTransID(), ntcTransactionContext.getPatternEnum());
+        ntcTransaction.setNtcStatusEnum(ntcStatusEnum);
+        ntcTransaction.setTargetClass(ntcTransactionContext.getTargetClass());
+        ntcTransaction.setTargetMethod(ntcTransactionContext.getTargetMethod());
+        ntcTransactionLogsPublisher.publishEvent(ntcTransaction, eventTypeEnum);
+    }
+
     public void cleanThreadLocal() {
         CURRENT.remove();
     }
@@ -110,11 +118,10 @@ public class NtcTransactionManager {
     }
 
     /**
-     * 走自己的cancel todo 重写
+     * 走自己的cancel
      * */
-    public void cancel(ProceedingJoinPoint point) {
+    public void cancel(ProceedingJoinPoint point) throws Exception {
         LOGGER.warn("开始执行cancel方法！");
-        //todo 记录日志----cancel方法无论成功还是失败都记录日志
         MethodSignature signature = (MethodSignature) point.getSignature();
         Method method = signature.getMethod();
         Class<?> clazz = point.getTarget().getClass();
@@ -123,17 +130,25 @@ public class NtcTransactionManager {
         Class<?>[] parameterTypes = method.getParameterTypes();
         Ntc ntc = method.getAnnotation(Ntc.class);
         String cancelMethod = ntc.cancelMethod();
+        Boolean isExit = Boolean.TRUE;
         if (StringUtils.isEmpty(cancelMethod)) {
             //给默认的cancel方法名称
             cancelMethod = method.getName() + "Cancel";
+            isExit = Boolean.FALSE;
         }
         try {
             InvokeUtils.executeParticipantMethod(new NtcInvocation(clazz, cancelMethod, parameterTypes, args));
             LOGGER.warn("执行cancel方法成功！");
+        } catch (NoSuchMethodException e) {
+            if (isExit) {
+                LOGGER.warn("{} 方法的cancel方法执行失败！", method.getName());
+                LOGGER.warn("失败信息：", e);
+                throw e;
+            }
         } catch (Throwable throwable) {
-            //todo cancel方法放入队列中进行重试---并记录数据库，成功后修改状态
             LOGGER.warn("{} 方法的cancel方法执行失败！", method.getName());
             LOGGER.warn("失败信息：", throwable);
+            throw throwable;
         }
     }
 
@@ -143,7 +158,6 @@ public class NtcTransactionManager {
     public void cancel() {
 
         NtcTransaction currentTransaction = getCurrentTransaction();
-
         if (Objects.isNull(currentTransaction)) {
             return;
         }
@@ -175,7 +189,7 @@ public class NtcTransactionManager {
      * */
     public void sendMessage() {
         NtcTransaction currentTransaction = getCurrentTransaction();
-        //当前事物不为空，且模式为优先补偿才发送消息
+        //当前事物不为空
         if (Objects.nonNull(currentTransaction)) {
             //jdk异步通知反射调用
             ntcTransactionInvocationPublisher.publishEvent(currentTransaction);

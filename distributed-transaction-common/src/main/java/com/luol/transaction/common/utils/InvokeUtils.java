@@ -3,6 +3,7 @@ package com.luol.transaction.common.utils;
 import com.luol.transaction.common.bean.entity.NtcInvocation;
 import org.apache.commons.lang3.reflect.MethodUtils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
 /**

@@ -1,5 +1,6 @@
 package com.luol.transaction.common.bean.adapter;
 
+import com.luol.transaction.common.bean.model.NtcTransaction;
 import org.bson.types.ObjectId;
 
 import java.io.Serializable;
@@ -17,4 +18,8 @@ public class MongoAdapter extends CoordinatorRepositoryAdapter implements Serial
     private static final long serialVersionUID = 8804188145680989204L;
 
     private ObjectId objectID;
+
+    public MongoAdapter(NtcTransaction ntcTransaction) {
+        super(ntcTransaction);
+    }
 }

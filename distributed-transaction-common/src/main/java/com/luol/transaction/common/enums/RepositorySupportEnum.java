@@ -55,7 +55,7 @@ public enum RepositorySupportEnum {
                 Arrays.stream(RepositorySupportEnum.values())
                         .filter(v -> Objects.equals(v.getSupport(), support))
                         .findFirst();
-        return repositorySupportEnum.orElse(RepositorySupportEnum.DB);
+        return repositorySupportEnum.orElse(RepositorySupportEnum.REDIS);
     }
 
 

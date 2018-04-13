@@ -44,4 +44,18 @@ public class NtcTransactionInvocation implements Serializable {
      * RPC调用ntc方法集合
      * */
     private List<NtcInvocation> rpcNtcInvocations;
+
+    /**
+     * 调用接口名称
+     */
+    private String targetClass;
+
+    /**
+     * 调用方法名称
+     */
+    private String targetMethod;
+
+    public void clear() {
+        rpcNtcInvocations = null;
+    }
 }

@@ -70,8 +70,7 @@ public class NtcTransactionFilter implements Filter {
                 if (Objects.nonNull(ntcTransactionContext)) {
                     RpcContext.getContext().setAttachment(CommonConstant.NTC_TRANSACTION_CONTEXT, JSON.toJSONString(ntcTransactionContext));
                 }
-                final Result result = invoker.invoke(invocation);
-                return result;
+                return invoker.invoke(invocation);
             } catch (RpcException e) {
                 LOGGER.warn("dubbo拦截器远程调用异常RpcException: {}", e);
                 throw e;

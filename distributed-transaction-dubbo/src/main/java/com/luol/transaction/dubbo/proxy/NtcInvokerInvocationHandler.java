@@ -37,7 +37,6 @@ public class NtcInvokerInvocationHandler extends InvokerInvocationHandler {
     public <T> NtcInvokerInvocationHandler(T target, Invoker<T> invoker) {
         super(invoker);
         this.target = target;
-
     }
 
     @Override
@@ -48,6 +47,8 @@ public class NtcInvokerInvocationHandler extends InvokerInvocationHandler {
         NtcTransactionContext ntcTransactionContext = null;
         if (Objects.nonNull(ntc)) {
             ntcTransactionContext = TransactionContextLocal.getInstance().get();
+            ntcTransactionContext.setTargetClass(clazz.getName());
+            ntcTransactionContext.setTargetMethod(method.getName());
             boolean flag = Objects.nonNull(ntcTransactionContext) && Objects.equals(ntcTransactionContext.getNtcRoleEnum(), NtcRoleEnum.LOCAL);
             if (flag) {
                 return super.invoke(proxy, method, args);

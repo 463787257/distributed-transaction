@@ -41,6 +41,16 @@ public class NtcTransactionContext implements Serializable {
      * */
     private NtcRoleEnum ntcRoleEnum;
 
+    /**
+     * 调用接口名称
+     */
+    private String targetClass;
+
+    /**
+     * 调用方法名称
+     */
+    private String targetMethod;
+
     public String getTransID() {
         return transID;
     }
@@ -89,5 +99,21 @@ public class NtcTransactionContext implements Serializable {
                 this.ntcRoleEnum = NtcRoleEnum.objectOf(ntcRoleEnum);
             }
         }
+    }
+
+    public String getTargetClass() {
+        return targetClass;
+    }
+
+    public void setTargetClass(String targetClass) {
+        this.targetClass = targetClass;
+    }
+
+    public String getTargetMethod() {
+        return targetMethod;
+    }
+
+    public void setTargetMethod(String targetMethod) {
+        this.targetMethod = targetMethod;
     }
 }

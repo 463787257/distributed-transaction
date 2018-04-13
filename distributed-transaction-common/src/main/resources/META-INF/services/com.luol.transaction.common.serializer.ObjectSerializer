@@ -1,0 +1,4 @@
+com.luol.transaction.common.serializer.impl.HessianSerializer
+com.luol.transaction.common.serializer.impl.JavaSerializer
+com.luol.transaction.common.serializer.impl.KryoSerializer
+com.luol.transaction.common.serializer.impl.ProtostuffSerializer

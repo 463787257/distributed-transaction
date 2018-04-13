@@ -1,9 +1,15 @@
 package com.luol.transaction.core.service.handler;
 
 import com.luol.transaction.common.bean.context.NtcTransactionContext;
+import com.luol.transaction.common.enums.EventTypeEnum;
+import com.luol.transaction.common.enums.NtcRoleEnum;
+import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.core.service.NtcTransactionHandler;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
+import java.util.Objects;
 
 /**
  * @author luol
@@ -15,6 +21,10 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class LocalNtcTransactionHandler implements NtcTransactionHandler {
+
+    @Resource
+    private NtcTransactionManager ntcTransactionManager;
+
     /**
      * 分布式事务处理接口
      *
@@ -25,6 +35,11 @@ public class LocalNtcTransactionHandler implements NtcTransactionHandler {
      */
     @Override
     public Object handler(ProceedingJoinPoint point, NtcTransactionContext ntcTransactionContext) throws Throwable {
-        return point.proceed();
+        Object proceed = point.proceed();
+        if (Objects.nonNull(ntcTransactionContext)) {
+
+            ntcTransactionManager.addLogs(NtcRoleEnum.LOCAL, ntcTransactionContext, NtcStatusEnum.SUCCESS, EventTypeEnum.UPDATE);
+        }
+        return proceed;
     }
 }

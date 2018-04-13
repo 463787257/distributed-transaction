@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.Objects;
 
 /**
  * @author luol
@@ -47,7 +46,6 @@ public class StartNtcTransactionHandler implements NtcTransactionHandler {
     public Object handler(ProceedingJoinPoint point, NtcTransactionContext ntcTransactionContext) throws Throwable {
         Object returnValue = null;
         NtcTransaction ntcTransaction = null;
-        boolean isSucess = Boolean.TRUE;
         try {
             ntcTransaction = ntcTransactionManager.begin(point);
 
@@ -58,19 +56,16 @@ public class StartNtcTransactionHandler implements NtcTransactionHandler {
             returnValue = point.proceed();
 
             ntcTransaction.setNtcStatusEnum(NtcStatusEnum.SUCCESS);
-            //更新日志状态---发起者，try完成
-            ntcTransactionLogsPublisher.publishEvent(ntcTransaction, EventTypeEnum.UPDATE);
-            isSucess = Boolean.FALSE;
             return returnValue;
         } catch (Throwable throwable) {
             ntcTransaction.setNtcStatusEnum(NtcStatusEnum.CANCEL);
             ntcTransaction.setPatternEnum(PatternEnum.ONLY_ROLLBACK);
             throw throwable;
-        }finally {
+        } finally {
+            //更新日志状态---发起者，try完成
+            ntcTransactionLogsPublisher.publishEvent(ntcTransaction, EventTypeEnum.UPDATE);
             //发送消息
-            if (isSucess) {
-                ntcTransactionManager.sendMessage();
-            }
+            ntcTransactionManager.sendMessage();
             ntcTransactionManager.cleanThreadLocal();
             TransactionContextLocal.getInstance().remove();
             LOGGER.warn("执行ntc事务结束！end");
