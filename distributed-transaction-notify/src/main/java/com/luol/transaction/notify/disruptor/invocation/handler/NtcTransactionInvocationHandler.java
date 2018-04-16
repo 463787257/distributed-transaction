@@ -5,7 +5,6 @@ import com.luol.transaction.common.bean.context.NtcTransactionContext;
 import com.luol.transaction.common.bean.entity.NtcInvocation;
 import com.luol.transaction.common.bean.model.NtcTransaction;
 import com.luol.transaction.common.concurrent.threadlocal.TransactionContextLocal;
-import com.luol.transaction.common.coordinator.CoordinatorService;
 import com.luol.transaction.common.enums.EventTypeEnum;
 import com.luol.transaction.common.enums.NtcRoleEnum;
 import com.luol.transaction.common.enums.NtcStatusEnum;
@@ -42,8 +41,8 @@ public class NtcTransactionInvocationHandler implements EventHandler<NtcTransact
     @Resource
     private NtcTransactionLogsPublisher ntcTransactionLogsPublisher;
 
-    @Resource
-    private CoordinatorService coordinatorService;
+//    @Resource
+//    private CoordinatorService coordinatorService;
 
     @Override
     public void onEvent(NtcTransactionInvocation ntcTransactionInvocation, long l, boolean b) throws Exception {

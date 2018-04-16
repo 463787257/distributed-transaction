@@ -9,6 +9,7 @@
         <module>distributed-transaction-core</module>
         <module>distributed-transaction-dubbo</module>
         <module>distributed-transaction-notify</module>
+        <module>distributed-transaction-mq</module>
     </modules>
 
     <parent>

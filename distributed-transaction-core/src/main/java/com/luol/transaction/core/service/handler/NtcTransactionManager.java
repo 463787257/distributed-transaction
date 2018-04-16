@@ -187,7 +187,7 @@ public class NtcTransactionManager {
     /**
      * 发送消息
      * */
-    public void sendMessage() {
+    public void asynchronous() {
         NtcTransaction currentTransaction = getCurrentTransaction();
         //当前事物不为空
         if (Objects.nonNull(currentTransaction)) {

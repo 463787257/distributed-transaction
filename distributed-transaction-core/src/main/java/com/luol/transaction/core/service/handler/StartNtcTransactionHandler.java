@@ -65,7 +65,7 @@ public class StartNtcTransactionHandler implements NtcTransactionHandler {
             //更新日志状态---发起者，try完成
             ntcTransactionLogsPublisher.publishEvent(ntcTransaction, EventTypeEnum.UPDATE);
             //发送消息
-            ntcTransactionManager.sendMessage();
+            ntcTransactionManager.asynchronous();
             ntcTransactionManager.cleanThreadLocal();
             TransactionContextLocal.getInstance().remove();
             LOGGER.warn("执行ntc事务结束！end");
