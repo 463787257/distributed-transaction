@@ -43,7 +43,7 @@ public class NtcTransactionInvocationPublisher {
             AtomicInteger index = new AtomicInteger(1);
             return new Thread(null, r, "disruptor-invocation-thread-" + index.getAndIncrement());
         }, ProducerType.MULTI, new YieldingWaitStrategy());
-        disruptor.handleEventsWith(ntcTransactionInvocationHandler, new NtcTransactionInvocationHandler());
+        disruptor.handleEventsWith(ntcTransactionInvocationHandler);
         disruptor.setDefaultExceptionHandler(ntcTransactionInvocationExceptionHandler);
         disruptor.start();
     }

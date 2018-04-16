@@ -32,7 +32,7 @@ public class BaseProducer implements NtcMqSendService {
     @Resource
     private NtcConfig ntcConfig;
 
-    private static final Logger logger = LoggerFactory.getLogger(BaseProducer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BaseProducer.class);
 
     @PostConstruct
     public void init() {
@@ -43,7 +43,7 @@ public class BaseProducer implements NtcMqSendService {
         try {
             defaultMQProducer.start();
         } catch (MQClientException e) {
-            logger.warn("producer初始化失败：" + e.getMessage());
+            LOGGER.warn("producer初始化失败：" + e.getMessage());
         }
     }
 
@@ -71,7 +71,7 @@ public class BaseProducer implements NtcMqSendService {
         try {
             defaultMQProducer.send(message);
         } catch (Exception e) {
-            logger.warn("消息发送失败：" + e.getMessage());
+            LOGGER.warn("消息发送失败：" + e.getMessage());
         }
     }
 }

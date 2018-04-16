@@ -44,7 +44,6 @@ public class StartNtcTransactionHandler implements NtcTransactionHandler {
      */
     @Override
     public Object handler(ProceedingJoinPoint point, NtcTransactionContext ntcTransactionContext) throws Throwable {
-        Object returnValue = null;
         NtcTransaction ntcTransaction = null;
         try {
             ntcTransaction = ntcTransactionManager.begin(point);
@@ -53,10 +52,7 @@ public class StartNtcTransactionHandler implements NtcTransactionHandler {
             ntcTransactionLogsPublisher.publishEvent(ntcTransaction, EventTypeEnum.SAVE);
 
             //调用当前调用方法
-            returnValue = point.proceed();
-
-            ntcTransaction.setNtcStatusEnum(NtcStatusEnum.SUCCESS);
-            return returnValue;
+            return point.proceed();
         } catch (Throwable throwable) {
             ntcTransaction.setNtcStatusEnum(NtcStatusEnum.CANCEL);
             ntcTransaction.setPatternEnum(PatternEnum.ONLY_ROLLBACK);

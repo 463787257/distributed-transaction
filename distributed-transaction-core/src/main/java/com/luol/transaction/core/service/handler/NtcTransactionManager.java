@@ -190,7 +190,7 @@ public class NtcTransactionManager {
     public void asynchronous() {
         NtcTransaction currentTransaction = getCurrentTransaction();
         //当前事物不为空,并且不成功
-        if (Objects.nonNull(currentTransaction) && !Objects.equals(currentTransaction.getNtcStatusEnum(), NtcStatusEnum.SUCCESS)) {
+        if (Objects.nonNull(currentTransaction)) {
             //jdk异步通知反射调用
             ntcTransactionInvocationPublisher.publishEvent(currentTransaction);
         }

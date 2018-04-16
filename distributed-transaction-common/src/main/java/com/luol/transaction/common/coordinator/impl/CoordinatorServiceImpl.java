@@ -1,6 +1,7 @@
 package com.luol.transaction.common.coordinator.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.lmax.disruptor.EventSink;
 import com.luol.transaction.common.bean.context.NtcTransactionContext;
 import com.luol.transaction.common.bean.entity.NtcInvocation;
 import com.luol.transaction.common.bean.message.MessageEntity;
@@ -149,7 +150,6 @@ public class CoordinatorServiceImpl implements CoordinatorService {
         MessageEntity messageEntity = serializer.deSerialize(message, MessageEntity.class);
         try {
             if (Objects.equals(messageEntity.getAsynchronousTypeEnums(), AsynchronousTypeEnums.INVOCATION)) {
-                //查库存在异步问题 so？ 不查库 --->  todo 延迟队列  ---  定时查库，定时发送消息，防止遗漏
                 Boolean isFail = handlerInvocation(messageEntity.getNtcTransaction());
                 return !isFail;
             } else if (Objects.equals(messageEntity.getAsynchronousTypeEnums(), AsynchronousTypeEnums.LOGS)) {
@@ -206,11 +206,17 @@ public class CoordinatorServiceImpl implements CoordinatorService {
      * 反射处理调用
      *
      * @param transaction
+     * @return 返回是否失败
      */
     @Override
     public Boolean handlerInvocation(NtcTransaction transaction) {
         if (Objects.isNull(transaction) || CollectionUtils.isEmpty(transaction.getRpcNtcInvocations())) {
             return Boolean.TRUE;
+        }
+        //校验事物状态，排除已成功  +++  todo 延迟队列  ---  定时查库，定时发送消息，防止遗漏
+        NtcTransaction ntcTransaction = findByTransID(transaction.getTransID());
+        if (Objects.nonNull(ntcTransaction) && Objects.equals(ntcTransaction.getNtcStatusEnum(), NtcStatusEnum.SUCCESS)) {
+            return Boolean.FALSE;
         }
         try {
             NtcTransactionContext context = new NtcTransactionContext();
@@ -229,6 +235,7 @@ public class CoordinatorServiceImpl implements CoordinatorService {
             if (!bool && transaction.getCurrentRetryCounts() > transaction.getMaxRetryCounts()) {
                 transaction.setPatternEnum(PatternEnum.ONLY_ROLLBACK);
             }
+            transaction.setCurrentRetryCounts(transaction.getCurrentRetryCounts() + NumberUtils.INTEGER_ONE);
             //todo 设置最大最大调用次数，不能一直调用吧
             Boolean flag = Boolean.FALSE;
             for (NtcInvocation ntcInvocation : transaction.getRpcNtcInvocations()) {
@@ -242,6 +249,14 @@ public class CoordinatorServiceImpl implements CoordinatorService {
                         flag = Boolean.TRUE;
                     }
                 }
+            }
+            if (flag) {
+                //重新走MQ
+                MessageEntity messageEntity = new MessageEntity();
+                messageEntity.setAsynchronousTypeEnums(AsynchronousTypeEnums.INVOCATION);
+                messageEntity.setNtcTransaction(transaction);
+                final Boolean isSuccess = sendMessage(messageEntity);
+                return !isSuccess;
             }
             return flag;
         } finally {
