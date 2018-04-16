@@ -87,7 +87,7 @@ public class NtcTransaction implements Serializable {
     private Date createTime;
 
     /**
-     * 版本号 乐观锁控制
+     * 版本号
      */
     private Integer version = 1;
 

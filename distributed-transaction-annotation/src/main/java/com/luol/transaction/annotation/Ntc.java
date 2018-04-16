@@ -35,7 +35,7 @@ public @interface Ntc {
     int maxRetryCounts() default 10;
 
     /**
-     * 碰到异常直接回滚的异常集合  todo 提供者 - 捕获后全部抛出 NtcException.class 或者再加 自定义异常抛出
+     * 碰到异常直接回滚的异常集合
      * */
     Class<? extends Throwable>[] rollbackFor() default {};
 

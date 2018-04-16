@@ -7,7 +7,7 @@ import com.luol.transaction.common.enums.EventTypeEnum;
 import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.common.enums.PatternEnum;
 import com.luol.transaction.core.service.NtcTransactionHandler;
-import com.luol.transaction.notify.disruptor.logs.publisher.NtcTransactionLogsPublisher;
+import com.luol.transaction.asynchronous.disruptor.logs.publisher.NtcTransactionLogsPublisher;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +35,7 @@ public class StartNtcTransactionHandler implements NtcTransactionHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(StartNtcTransactionHandler.class);
 
     /**
-     * 分布式事务处理接口 todo 日志状态更新后，上下文也要跟着更新
+     * 分布式事务处理接口
      *
      * @param point                 point 切点
      * @param ntcTransactionContext ntc事务上下文

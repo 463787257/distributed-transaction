@@ -10,8 +10,8 @@ import com.luol.transaction.common.enums.NtcRoleEnum;
 import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.common.enums.PatternEnum;
 import com.luol.transaction.common.utils.InvokeUtils;
-import com.luol.transaction.notify.disruptor.invocation.publisher.NtcTransactionInvocationPublisher;
-import com.luol.transaction.notify.disruptor.logs.publisher.NtcTransactionLogsPublisher;
+import com.luol.transaction.asynchronous.disruptor.invocation.publisher.NtcTransactionInvocationPublisher;
+import com.luol.transaction.asynchronous.disruptor.logs.publisher.NtcTransactionLogsPublisher;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -189,8 +189,8 @@ public class NtcTransactionManager {
      * */
     public void asynchronous() {
         NtcTransaction currentTransaction = getCurrentTransaction();
-        //当前事物不为空
-        if (Objects.nonNull(currentTransaction)) {
+        //当前事物不为空,并且不成功
+        if (Objects.nonNull(currentTransaction) && !Objects.equals(currentTransaction.getNtcStatusEnum(), NtcStatusEnum.SUCCESS)) {
             //jdk异步通知反射调用
             ntcTransactionInvocationPublisher.publishEvent(currentTransaction);
         }

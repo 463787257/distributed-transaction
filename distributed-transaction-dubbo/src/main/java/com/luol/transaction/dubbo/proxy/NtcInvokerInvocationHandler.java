@@ -13,7 +13,7 @@ import com.luol.transaction.common.enums.PatternEnum;
 import com.luol.transaction.common.utils.DefaultValueUtils;
 import com.luol.transaction.common.utils.SpringBeanUtils;
 import com.luol.transaction.core.service.handler.NtcTransactionManager;
-import com.luol.transaction.notify.disruptor.logs.publisher.NtcTransactionLogsPublisher;
+import com.luol.transaction.asynchronous.disruptor.logs.publisher.NtcTransactionLogsPublisher;
 
 import java.lang.reflect.Method;
 import java.util.Objects;

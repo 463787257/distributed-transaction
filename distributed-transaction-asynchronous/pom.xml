@@ -10,12 +10,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.luol</groupId>
-    <artifactId>distributed-transaction-dubbo</artifactId>
+    <artifactId>distributed-transaction-asynchronous</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.luol</groupId>
-            <artifactId>distributed-transaction-mq</artifactId>
+            <artifactId>distributed-transaction-annotation</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

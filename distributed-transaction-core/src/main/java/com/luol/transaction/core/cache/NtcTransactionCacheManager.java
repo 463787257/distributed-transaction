@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutionException;
  * @author luol
  * @date 2018/3/29
  * @time 14:51
- * @function 功能：
+ * @function 功能：todo 暂时没用到的缓存类
  * @describe 版本描述：
  * @modifyLog 修改日志：
  */

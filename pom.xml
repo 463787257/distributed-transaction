@@ -8,7 +8,7 @@
         <module>distributed-transaction-common</module>
         <module>distributed-transaction-core</module>
         <module>distributed-transaction-dubbo</module>
-        <module>distributed-transaction-notify</module>
+        <module>distributed-transaction-asynchronous</module>
         <module>distributed-transaction-mq</module>
     </modules>
 
@@ -180,5 +180,19 @@
                 </configuration>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/*/java</directory>
+                <includes>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/*/resources</directory>
+                <includes>
+                    <include>**/*.*</include>
+                </includes>
+            </resource>
+        </resources>
     </build>
 </project>

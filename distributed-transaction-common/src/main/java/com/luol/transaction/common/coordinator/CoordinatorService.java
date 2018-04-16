@@ -1,7 +1,10 @@
 package com.luol.transaction.common.coordinator;
 
+import com.luol.transaction.common.bean.message.MessageEntity;
 import com.luol.transaction.common.bean.model.NtcTransaction;
 import com.luol.transaction.common.config.NtcConfig;
+import com.luol.transaction.common.enums.EventTypeEnum;
+import com.luol.transaction.common.serializer.ObjectSerializer;
 
 /**
  * @author luol
@@ -18,7 +21,7 @@ public interface CoordinatorService {
      *
      * @throws Exception 异常
      */
-    void start(NtcConfig ntcConfig) throws Exception;
+    void start() throws Exception;
 
     /**
      * 保存补偿事务信息
@@ -61,4 +64,31 @@ public interface CoordinatorService {
      */
     void update(NtcTransaction ntcTransaction);
 
+    /**
+     * 发送消息
+     * */
+    Boolean sendMessage(MessageEntity message);
+
+    /**
+     * 接收到mq消息处理
+     * @param message 消息体
+     * @return true 处理成功  false 处理失败
+     * */
+    Boolean processMessage(byte[] message);
+
+    /**
+     * 设置序列化方式
+     * @param serializer 序列化方式
+     */
+    void setSerializer(ObjectSerializer serializer);
+
+    /**
+     * 日志处理调用，逻辑不想写两遍
+     * */
+    void handlerLogs(NtcTransaction ntcTransaction, EventTypeEnum eventTypeEnum);
+
+    /**
+     * 反射处理调用
+     * */
+    Boolean handlerInvocation(NtcTransaction ntcTransaction);
 }

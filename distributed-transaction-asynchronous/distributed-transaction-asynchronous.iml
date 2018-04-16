@@ -10,14 +10,11 @@
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/src/main/resource" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="distributed-transaction-mq" />
-    <orderEntry type="module" module-name="distributed-transaction-core" />
-    <orderEntry type="module" module-name="distributed-transaction-asynchronous" />
     <orderEntry type="module" module-name="distributed-transaction-annotation" />
     <orderEntry type="module" module-name="distributed-transaction-common" />
     <orderEntry type="library" name="Maven: org.springframework.boot:spring-boot-starter-data-redis:1.5.10.RELEASE" level="project" />

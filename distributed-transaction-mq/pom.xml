@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>com.luol</groupId>
-            <artifactId>distributed-transaction-annotation</artifactId>
+            <artifactId>distributed-transaction-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

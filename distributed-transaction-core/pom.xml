@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>com.luol</groupId>
-            <artifactId>distributed-transaction-notify</artifactId>
+            <artifactId>distributed-transaction-asynchronous</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

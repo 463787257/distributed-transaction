@@ -32,6 +32,9 @@ public class NtcInitServiceImpl implements NtcInitService {
     @Resource
     private CoordinatorService coordinatorService;
 
+    @Resource
+    private NtcConfig ntcConfig;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(NtcInitServiceImpl.class);
 
     /**
@@ -41,10 +44,8 @@ public class NtcInitServiceImpl implements NtcInitService {
     public void initialization() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> LOGGER.error("系统关闭")));
         try {
-            //todo ntcConfig修改配置位置
-            NtcConfig ntcConfig = new NtcConfig();
             loadSpiSupport(ntcConfig);
-            coordinatorService.start(ntcConfig);
+            coordinatorService.start();
         } catch (Exception ex) {
             LOGGER.error("ntc事务初始化异常:{}", ex);
             //非正常关闭
@@ -63,6 +64,8 @@ public class NtcInitServiceImpl implements NtcInitService {
 
         final Optional<ObjectSerializer> serializer = StreamSupport.stream(objectSerializers.spliterator(), false)
                 .filter(objectSerializer -> Objects.equals(objectSerializer.getScheme(), serializeEnum)).findFirst();
+
+        serializer.ifPresent(coordinatorService::setSerializer);
 
         //spi  repository support
         final RepositorySupportEnum repositorySupportEnum = RepositorySupportEnum.acquire(ntcConfig.getRepositorySupport());

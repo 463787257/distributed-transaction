@@ -51,7 +51,6 @@ public enum SerializeEnum {
                         .filter(v -> Objects.equals(v.getSerialize(), serialize))
                         .findFirst();
         return serializeEnum.orElse(SerializeEnum.KRYO);
-
     }
 
     /**

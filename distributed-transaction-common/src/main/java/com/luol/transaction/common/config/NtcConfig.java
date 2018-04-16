@@ -25,5 +25,10 @@ public class NtcConfig {
     /**
      * 模块名称
      * */
-    private String modelName = "one";
+    private String modelName = "modelName";
+
+    /**
+     * mq地址
+     * */
+    private String mqAddress = "192.168.100.181:9876";
 }
