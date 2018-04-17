@@ -50,6 +50,8 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
 
     private String keyPrefix;
 
+    private String modelName;
+
     /**
      * 创建本地事务对象
      *
@@ -155,6 +157,7 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
     @Override
     public void init(NtcConfig ntcConfig) throws NtcException {
         this.keyPrefix = "ntc-redis-config" + ntcConfig.getModelName();
+        this.modelName = ntcConfig.getModelName();
         buildJedisPool(ntcConfig);
     }
 
@@ -162,6 +165,9 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
         LOGGER.warn("构建redis配置信息===开始");
         NtcRedisConfig ntcRedisConfig = ntcConfig.getNtcRedisConfig();
         JedisPoolConfig config = new JedisPoolConfig();
+        if (Objects.isNull(config)) {
+            throw new NtcException("请设置redis初始化配置");
+        }
         config.setMaxIdle(ntcRedisConfig.getMaxIdle());
         //最小空闲连接数, 默认0
         config.setMinIdle(ntcRedisConfig.getMinIdle());
@@ -233,7 +239,7 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
     @Override
     public int addCompensationTask(String transID) {
         try {
-            jedisClient.hset(keyPrefix, transID, "1");
+            jedisClient.hset(modelName + keyPrefix , transID, "1");
             return 1;
         } catch (Exception e) {
             throw new NtcException(e);
@@ -249,7 +255,7 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
     @Override
     public Boolean isExitCompensationTask(String transID) {
         try {
-            String compensationTask = jedisClient.hget(keyPrefix, transID);
+            String compensationTask = jedisClient.hget(modelName + keyPrefix, transID);
             if (StringUtils.isNotBlank(compensationTask)) {
                 return Boolean.TRUE;
             } else {
@@ -276,7 +282,6 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
                 transactions.add(RepositoryConvertUtils.transformBean(contents, objectSerializer));
             }
         }
-        LOGGER.warn("redis:{}", JSON.toJSONString(transactions));
         if (!CollectionUtils.isEmpty(transactions)) {
             return transactions.stream().filter(ntcTransaction -> !Objects.equals(ntcTransaction.getNtcStatusEnum(), NtcStatusEnum.SUCCESS))
                     .filter(ntcTransaction -> ntcTransaction.getLastTime().compareTo(date) > 0).collect(Collectors.toList());

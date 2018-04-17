@@ -164,6 +164,9 @@ public class MongoCoordinatorRepository implements CoordinatorRepository {
     public void init(NtcConfig ntcConfig) throws NtcException {
         LOGGER.warn("构建mongdb连接===开始");
         NtcMongoConfig ntcMongoConfig = ntcConfig.getNtcMongoConfig();
+        if (Objects.isNull(ntcMongoConfig)) {
+            throw new NtcException("请设置mongdb初始化配置");
+        }
         this.collectionName = ntcMongoConfig.getCollectionName();
         this.taskName = ntcMongoConfig.getTaskName();
         MongoClientFactoryBean clientFactoryBean = new MongoClientFactoryBean();

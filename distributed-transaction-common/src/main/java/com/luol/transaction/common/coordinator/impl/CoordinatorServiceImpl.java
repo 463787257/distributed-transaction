@@ -84,33 +84,37 @@ public class CoordinatorServiceImpl implements CoordinatorService {
         pool = new ScheduledThreadPoolExecutor(1);
         pool.scheduleAtFixedRate(() -> {
             LOGGER.warn("定时查询失败事物===开始");
-            //第一步，查询所有1小时内未更新的失败事物
-            Date date = new Date();
-            Date minutes = DateUtils.addMinutes(date, -1);
-            List<NtcTransaction> allNeedCompensation = coordinatorRepository.findAllNeedCompensation(minutes);
-            LOGGER.warn("allNeedCompensation:{}", JSON.toJSONString(allNeedCompensation));
-            if (!CollectionUtils.isEmpty(allNeedCompensation)) {
-                allNeedCompensation.forEach(ntcTransaction -> {
-                    try {
-                        //第二步，校验事物恢复表中是否存在，不存在
-                        Boolean compensationTask = coordinatorRepository.isExitCompensationTask(ntcTransaction.getTransID());
-                        if (!compensationTask) {
-                            coordinatorRepository.addCompensationTask(ntcTransaction.getTransID());
-                            ntcTransaction.setCurrentRetryCounts(ntcTransaction.getCurrentRetryCounts() - 1);
-                            //发送事件
-                            MessageEntity messageEntity = new MessageEntity();
-                            messageEntity.setAsynchronousTypeEnums(AsynchronousTypeEnums.INVOCATION);
-                            messageEntity.setNtcTransaction(ntcTransaction);
-                            sendMessage(messageEntity);
+            try {
+                //第一步，查询所有1小时内未更新的失败事物
+                Date date = new Date();
+                Date minutes = DateUtils.addMinutes(date, -1);
+                List<NtcTransaction> allNeedCompensation = coordinatorRepository.findAllNeedCompensation(minutes);
+                LOGGER.warn("需要执行的事物集:{}", JSON.toJSONString(allNeedCompensation));
+                if (!CollectionUtils.isEmpty(allNeedCompensation)) {
+                    allNeedCompensation.forEach(ntcTransaction -> {
+                        try {
+                            //第二步，校验事物恢复表中是否存在，不存在
+                            Boolean compensationTask = coordinatorRepository.isExitCompensationTask(ntcTransaction.getTransID());
+                            if (!compensationTask) {
+                                coordinatorRepository.addCompensationTask(ntcTransaction.getTransID());
+                                ntcTransaction.setCurrentRetryCounts(ntcTransaction.getCurrentRetryCounts() - 1);
+                                //发送事件
+                                MessageEntity messageEntity = new MessageEntity();
+                                messageEntity.setAsynchronousTypeEnums(AsynchronousTypeEnums.INVOCATION);
+                                messageEntity.setNtcTransaction(ntcTransaction);
+                                sendMessage(messageEntity);
+                            }
+                        } catch (Exception e) {
+                            LOGGER.warn("定时补偿发生异常，当前数据信息：" + JSON.toJSONString(ntcTransaction));
+                            LOGGER.warn("异常信息：", e);
                         }
-                    } catch (Exception e) {
-                        LOGGER.warn("定时补偿发生异常，当前数据信息：" + JSON.toJSONString(ntcTransaction));
-                        LOGGER.warn("异常信息：", e);
-                    }
-                });
+                    });
+                }
+            } catch (Exception e) {
+                LOGGER.warn("定时执行失败事物===发生异常：", e);
             }
             LOGGER.warn("定时执行失败事物===结束");
-        }, ntcConfig.getScheduledDelay(), ntcConfig.getScheduledDelay(), TimeUnit.SECONDS);
+        }, ntcConfig.getScheduledDelay(), ntcConfig.getScheduledDelay(), TimeUnit.MINUTES);
     }
 
     @PreDestroy
@@ -272,11 +276,6 @@ public class CoordinatorServiceImpl implements CoordinatorService {
             update(transaction);
             return Boolean.FALSE;
         }
-        //校验事物状态，排除已成功
-        /*NtcTransaction ntcTransaction = getByTransIDAndName(transaction.getTransID(), transaction.getTargetClass(), transaction.getTargetMethod());
-        if (Objects.nonNull(ntcTransaction) && Objects.equals(ntcTransaction.getNtcStatusEnum(), NtcStatusEnum.SUCCESS)) {
-            return Boolean.FALSE;
-        }*/
         try {
             NtcTransactionContext context = new NtcTransactionContext();
             context.setTransID(transaction.getTransID());
