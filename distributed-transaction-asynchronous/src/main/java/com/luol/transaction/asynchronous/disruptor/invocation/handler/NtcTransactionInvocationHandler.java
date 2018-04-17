@@ -3,11 +3,8 @@ package com.luol.transaction.asynchronous.disruptor.invocation.handler;
 import com.lmax.disruptor.EventHandler;
 import com.luol.transaction.asynchronous.disruptor.invocation.event.NtcTransactionInvocation;
 import com.luol.transaction.asynchronous.disruptor.invocation.publisher.NtcTransactionInvocationPublisher;
-import com.luol.transaction.asynchronous.disruptor.logs.publisher.NtcTransactionLogsPublisher;
 import com.luol.transaction.common.bean.model.NtcTransaction;
 import com.luol.transaction.common.coordinator.CoordinatorService;
-import com.luol.transaction.common.enums.EventTypeEnum;
-import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.common.utils.SpringBeanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +28,6 @@ public class NtcTransactionInvocationHandler implements EventHandler<NtcTransact
     private static final Logger LOGGER = LoggerFactory.getLogger(NtcTransactionInvocationHandler.class);
 
     private NtcTransactionInvocationPublisher ntcTransactionInvocationPublisher;
-
-    @Resource
-    private NtcTransactionLogsPublisher ntcTransactionLogsPublisher;
 
     @Resource
     private CoordinatorService coordinatorService;
@@ -62,9 +56,6 @@ public class NtcTransactionInvocationHandler implements EventHandler<NtcTransact
                     this.ntcTransactionInvocationPublisher = ntcTransactionInvocationPublisher;
                 }
                 ntcTransactionInvocationPublisher.publishEvent(transaction);
-            } else {
-                transaction.setNtcStatusEnum(NtcStatusEnum.SUCCESS);
-                ntcTransactionLogsPublisher.publishEvent(transaction, EventTypeEnum.UPDATE);
             }
         } finally {
             LOGGER.warn("NtcTransactionInvocationHandler --- {} 模式执行结束!", transaction.getPatternEnum().getContent());

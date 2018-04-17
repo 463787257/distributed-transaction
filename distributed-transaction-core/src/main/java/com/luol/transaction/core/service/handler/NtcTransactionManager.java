@@ -5,6 +5,7 @@ import com.luol.transaction.common.bean.context.NtcTransactionContext;
 import com.luol.transaction.common.bean.entity.NtcInvocation;
 import com.luol.transaction.common.bean.model.NtcTransaction;
 import com.luol.transaction.common.concurrent.threadlocal.TransactionContextLocal;
+import com.luol.transaction.common.coordinator.CoordinatorService;
 import com.luol.transaction.common.enums.EventTypeEnum;
 import com.luol.transaction.common.enums.NtcRoleEnum;
 import com.luol.transaction.common.enums.NtcStatusEnum;
@@ -47,6 +48,9 @@ public class NtcTransactionManager {
 
     @Resource
     private NtcTransactionInvocationPublisher ntcTransactionInvocationPublisher;
+
+    @Resource
+    private CoordinatorService coordinatorService;
 
     /**
      * 事物是否开启---根据当前线程中是否存在context来判断
@@ -128,6 +132,7 @@ public class NtcTransactionManager {
         //访问目标方法的参数
         Object[] args = point.getArgs();
         Class<?>[] parameterTypes = method.getParameterTypes();
+
         Ntc ntc = method.getAnnotation(Ntc.class);
         String cancelMethod = ntc.cancelMethod();
         Boolean isExit = Boolean.TRUE;

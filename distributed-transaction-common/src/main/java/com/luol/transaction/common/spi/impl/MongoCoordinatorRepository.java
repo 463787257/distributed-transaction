@@ -2,9 +2,12 @@ package com.luol.transaction.common.spi.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+import com.google.common.base.Splitter;
 import com.luol.transaction.common.bean.adapter.MongoAdapter;
 import com.luol.transaction.common.bean.entity.NtcInvocation;
 import com.luol.transaction.common.bean.model.NtcTransaction;
+import com.luol.transaction.common.config.NtcConfig;
+import com.luol.transaction.common.config.NtcMongoConfig;
 import com.luol.transaction.common.enums.NtcRoleEnum;
 import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.common.enums.PatternEnum;
@@ -14,18 +17,25 @@ import com.luol.transaction.common.serializer.ObjectSerializer;
 import com.luol.transaction.common.spi.CoordinatorRepository;
 import com.luol.transaction.common.utils.AssertUtils;
 import com.luol.transaction.common.utils.RepositoryPathUtils;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
 import com.mongodb.WriteResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.mongodb.core.MongoClientFactoryBean;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+import java.net.InetSocketAddress;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
  * @author luol
@@ -41,10 +51,11 @@ public class MongoCoordinatorRepository implements CoordinatorRepository {
 
     private ObjectSerializer objectSerializer;
 
-    //todo 初始化
     private MongoTemplate template;
 
     private String collectionName;
+
+    private String taskName;
 
     /**
      * 创建本地事务对象
@@ -82,7 +93,7 @@ public class MongoCoordinatorRepository implements CoordinatorRepository {
     }
 
     /**
-     * 更新数据 todo 查询条件中 targetClass 是否需要加上？
+     * 更新数据
      *
      * @param ntcTransaction 事务对象
      * @return rows 1 成功 0 失败 失败需要抛异常
@@ -92,8 +103,7 @@ public class MongoCoordinatorRepository implements CoordinatorRepository {
     public int update(NtcTransaction ntcTransaction) throws NtcException {
         AssertUtils.notNull(ntcTransaction, "ntcTransaction不能为空");
         Query query = new Query();
-        Criteria criteria = Criteria.where("transID").is(ntcTransaction.getTransID())
-                .and("targetClass").is(ntcTransaction.getTargetClass()).and("targetMethod").is(ntcTransaction.getTargetMethod());
+        Criteria criteria = Criteria.where("transID").is(ntcTransaction.getTransID());
         query.addCriteria(criteria);
         Update update = new Update();
         update.set("lastTime", new Date());
@@ -147,13 +157,38 @@ public class MongoCoordinatorRepository implements CoordinatorRepository {
     /**
      * 初始化操作
      *
-     * @param modelName 模块名称
+     * @param ntcConfig
      * @throws NtcException 自定义异常
      */
     @Override
-    public void init(String modelName) throws NtcException {
-        this.collectionName = RepositoryPathUtils.buildMongoTableName(modelName);
-        //todo 开启mongdb连接
+    public void init(NtcConfig ntcConfig) throws NtcException {
+        LOGGER.warn("构建mongdb连接===开始");
+        NtcMongoConfig ntcMongoConfig = ntcConfig.getNtcMongoConfig();
+        this.collectionName = ntcMongoConfig.getCollectionName();
+        this.taskName = ntcMongoConfig.getTaskName();
+        MongoClientFactoryBean clientFactoryBean = new MongoClientFactoryBean();
+        MongoCredential credential = MongoCredential.createScramSha1Credential(ntcMongoConfig.getMongoUserName(),
+                ntcMongoConfig.getMongoDbName(),
+                ntcMongoConfig.getMongoUserPwd().toCharArray());
+        clientFactoryBean.setCredentials(new MongoCredential[]{
+                credential
+        });
+        List<String> urls = Splitter.on(",").trimResults().splitToList(ntcMongoConfig.getMongoDbUrl());
+
+        final ServerAddress[] sds = urls.stream().map(url -> {
+            List<String> adds = Splitter.on(":").trimResults().splitToList(url);
+            InetSocketAddress address = new InetSocketAddress(adds.get(0), Integer.parseInt(adds.get(1)));
+            return new ServerAddress(address);
+        }).collect(Collectors.toList()).toArray(new ServerAddress[]{});
+
+        clientFactoryBean.setReplicaSetSeeds(sds);
+        try {
+            clientFactoryBean.afterPropertiesSet();
+            template = new MongoTemplate(clientFactoryBean.getObject(), ntcMongoConfig.getMongoDbName());
+        } catch (Exception e) {
+            LOGGER.warn("构建mongdb连接===出错：", e);
+        }
+        LOGGER.warn("构建mongdb连接===结束");
     }
 
     /**
@@ -174,6 +209,55 @@ public class MongoCoordinatorRepository implements CoordinatorRepository {
     @Override
     public void setSerializer(ObjectSerializer objectSerializer) {
         this.objectSerializer = objectSerializer;
+    }
+
+    /**
+     * 添加记录正在补偿任务
+     *
+     * @param transID
+     */
+    @Override
+    public int addCompensationTask(String transID) {
+        AssertUtils.notNull(transID, "ntcTransaction不能为空");
+        Map<String, String> hashMap = new HashMap<>();
+        try {
+            hashMap.put("transID", transID);
+            hashMap.put("isEnable", "1");
+            template.save(hashMap, taskName);
+        } catch (NtcException e) {
+            LOGGER.warn("事物存储mongdb发生异常，数据信息：{}", JSON.toJSONString(hashMap));
+        }
+        return 1;
+    }
+
+    /**
+     * 查询补偿任务
+     *
+     * @param transID 事物ID
+     * @return NtcTransaction
+     */
+    @Override
+    public Boolean isExitCompensationTask(String transID) {
+        AssertUtils.notNull(transID, "transID不能为空");
+        Criteria criteria = Criteria.where("transID").is(transID);
+        Query query = new Query(criteria);
+        Map<String, String> hashMap = template.findOne(query, HashMap.class, taskName);
+        if (Objects.nonNull(hashMap) && Objects.equals(hashMap.get("isEnable"), "1")) {
+            return Boolean.TRUE;
+        } else {
+            return Boolean.FALSE;
+        }
+    }
+
+    /**
+     * 获取date之前失败的事物信息
+     *
+     * @param date 时间
+     * @return List<NtcTransaction>
+     */
+    @Override
+    public List<NtcTransaction> findAllNeedCompensation(Date date) {
+        return null;
     }
 
     private NtcTransaction buildByCache(MongoAdapter cache) {

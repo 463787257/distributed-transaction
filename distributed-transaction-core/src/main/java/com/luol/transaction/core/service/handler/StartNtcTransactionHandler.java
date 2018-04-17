@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.util.Objects;
 
 /**
  * @author luol
@@ -52,7 +53,15 @@ public class StartNtcTransactionHandler implements NtcTransactionHandler {
             ntcTransactionLogsPublisher.publishEvent(ntcTransaction, EventTypeEnum.SAVE);
 
             //调用当前调用方法
-            return point.proceed();
+            final Object proceed = point.proceed();
+
+            if (Objects.equals(ntcTransaction.getPatternEnum(), PatternEnum.ONLY_ROLLBACK)) {
+                ntcTransaction.setNtcStatusEnum(NtcStatusEnum.CANCEL);
+            } else if (Objects.equals(ntcTransaction.getPatternEnum(), PatternEnum.NOTIFY_ROLLBACK)) {
+                ntcTransaction.setNtcStatusEnum(NtcStatusEnum.NOTIFY);
+            }
+
+            return proceed;
         } catch (Throwable throwable) {
             ntcTransaction.setNtcStatusEnum(NtcStatusEnum.CANCEL);
             ntcTransaction.setPatternEnum(PatternEnum.ONLY_ROLLBACK);

@@ -1,8 +1,12 @@
 package com.luol.transaction.common.spi.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import com.luol.transaction.common.bean.model.NtcTransaction;
+import com.luol.transaction.common.config.NtcConfig;
 import com.luol.transaction.common.config.NtcRedisConfig;
+import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.common.enums.RepositorySupportEnum;
 import com.luol.transaction.common.exception.NtcException;
 import com.luol.transaction.common.jedis.JedisClient;
@@ -21,7 +25,9 @@ import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
+import javax.annotation.Resource;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,7 +36,7 @@ import java.util.stream.Collectors;
  * @author luol
  * @date 2018/4/4
  * @time 11:38
- * @function 功能：todo 改成存hash表
+ * @function 功能：
  * @describe 版本描述：
  * @modifyLog 修改日志：
  */
@@ -41,8 +47,6 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
     private ObjectSerializer objectSerializer;
 
     private JedisClient jedisClient;
-
-    private String keySuffix;
 
     private String keyPrefix;
 
@@ -55,10 +59,8 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
     @Override
     public int create(NtcTransaction ntcTransaction) {
         try {
-            final String redisKey = RepositoryPathUtils.buildRedisKey(ntcTransaction.getTransID(),
-                    ntcTransaction.getTargetClass() + ntcTransaction.getTargetMethod());
+            final String redisKey = RepositoryPathUtils.buildRedisKey(keyPrefix, ntcTransaction.getTransID());
             jedisClient.set(redisKey, RepositoryConvertUtils.convert(ntcTransaction, objectSerializer));
-            //jedisClient.hset(redisKey, ntcTransaction.getTargetClass() + ntcTransaction.getTargetMethod(),RepositoryConvertUtils.convert(ntcTransaction, objectSerializer));
             return 1;
         } catch (Exception e) {
             throw new NtcException(e);
@@ -74,8 +76,8 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
     @Override
     public int remove(String transID) {
         try {
-            final String redisKey = RepositoryPathUtils.buildRedisKey(transID, keySuffix);
-            return jedisClient.del(redisKey + keySuffix).intValue();
+            final String redisKey = RepositoryPathUtils.buildRedisKey(keyPrefix, transID);
+            return jedisClient.del(redisKey).intValue();
         } catch (Exception e) {
             throw new NtcException(e);
         }
@@ -91,14 +93,12 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
     @Override
     public int update(NtcTransaction ntcTransaction) throws NtcException {
         try {
-            final String redisKey = RepositoryPathUtils.buildRedisKey(ntcTransaction.getTransID(), ntcTransaction.getTargetClass() + ntcTransaction.getTargetMethod());
+            final String redisKey = RepositoryPathUtils.buildRedisKey(keyPrefix, ntcTransaction.getTransID());
             byte[] contents = jedisClient.get(redisKey.getBytes());
             NtcTransaction transformBean = RepositoryConvertUtils.transformBean(contents, objectSerializer);
             transformBean.setVersion(transformBean.getVersion() + 1);
             transformBean.setLastTime(new Date());
-            if (transformBean.getCurrentRetryCounts() < ntcTransaction.getCurrentRetryCounts()) {
-                transformBean.setCurrentRetryCounts(ntcTransaction.getCurrentRetryCounts());
-            }
+            transformBean.setCurrentRetryCounts(ntcTransaction.getCurrentRetryCounts());
             transformBean.setNtcRoleEnum(Objects.nonNull(ntcTransaction.getNtcRoleEnum()) ? ntcTransaction.getNtcRoleEnum() : transformBean.getNtcRoleEnum());
             transformBean.setNtcStatusEnum(Objects.nonNull(ntcTransaction.getNtcStatusEnum()) ? ntcTransaction.getNtcStatusEnum() : transformBean.getNtcStatusEnum());
             transformBean.setPatternEnum(Objects.nonNull(ntcTransaction.getPatternEnum()) ? ntcTransaction.getPatternEnum() : transformBean.getPatternEnum());
@@ -119,7 +119,7 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
     @Override
     public NtcTransaction findByTransID(String transID) {
         try {
-            final String redisKey = RepositoryPathUtils.buildRedisKey(transID, keySuffix);
+            final String redisKey = RepositoryPathUtils.buildRedisKey(keyPrefix, transID);
             byte[] contents = jedisClient.get(redisKey.getBytes());
             return RepositoryConvertUtils.transformBean(contents, objectSerializer);
         } catch (Exception e) {
@@ -149,20 +149,18 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
     /**
      * 初始化操作
      *
-     * @param modelName 模块名称
+     * @param ntcConfig 模块名称
      * @throws NtcException 自定义异常
      */
     @Override
-    public void init(String modelName) throws NtcException {
-        buildJedisPool();
+    public void init(NtcConfig ntcConfig) throws NtcException {
+        this.keyPrefix = "ntc-redis-config" + ntcConfig.getModelName();
+        buildJedisPool(ntcConfig);
     }
 
-    private void buildJedisPool() {
-        NtcRedisConfig ntcRedisConfig = new NtcRedisConfig();
-        //todo 后面换配置
-        ntcRedisConfig.setHostName("47.94.147.107");
-        ntcRedisConfig.setPort(6379);
-        LOGGER.warn("开始构建redis配置信息");
+    private void buildJedisPool(NtcConfig ntcConfig) {
+        LOGGER.warn("构建redis配置信息===开始");
+        NtcRedisConfig ntcRedisConfig = ntcConfig.getNtcRedisConfig();
         JedisPoolConfig config = new JedisPoolConfig();
         config.setMaxIdle(ntcRedisConfig.getMaxIdle());
         //最小空闲连接数, 默认0
@@ -204,6 +202,7 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
             }
             jedisClient = new JedisClientSingle(jedisPool);
         }
+        LOGGER.warn("构建redis配置信息===结束");
     }
 
     /**
@@ -224,5 +223,64 @@ public class RedisCoordinatorRepository implements CoordinatorRepository {
     @Override
     public void setSerializer(ObjectSerializer objectSerializer) {
         this.objectSerializer = objectSerializer;
+    }
+
+    /**
+     * 添加记录正在补偿任务
+     *
+     * @param transID
+     */
+    @Override
+    public int addCompensationTask(String transID) {
+        try {
+            jedisClient.hset(keyPrefix, transID, "1");
+            return 1;
+        } catch (Exception e) {
+            throw new NtcException(e);
+        }
+    }
+
+    /**
+     * 查询补偿任务
+     *
+     * @param transID 事物ID
+     * @return NtcTransaction
+     */
+    @Override
+    public Boolean isExitCompensationTask(String transID) {
+        try {
+            String compensationTask = jedisClient.hget(keyPrefix, transID);
+            if (StringUtils.isNotBlank(compensationTask)) {
+                return Boolean.TRUE;
+            } else {
+                return Boolean.FALSE;
+            }
+        } catch (Exception e) {
+            throw new NtcException(e);
+        }
+    }
+
+    /**
+     * 获取date之前失败的事物信息
+     *
+     * @param date 时间
+     * @return List<NtcTransaction>
+     */
+    @Override
+    public List<NtcTransaction> findAllNeedCompensation(Date date) {
+        List<NtcTransaction> transactions = Lists.newArrayList();
+        Set<byte[]> keys = jedisClient.keys((keyPrefix + "*").getBytes());
+        for (byte[] key : keys) {
+            byte[] contents = jedisClient.get(key);
+            if (contents != null) {
+                transactions.add(RepositoryConvertUtils.transformBean(contents, objectSerializer));
+            }
+        }
+        LOGGER.warn("redis:{}", JSON.toJSONString(transactions));
+        if (!CollectionUtils.isEmpty(transactions)) {
+            return transactions.stream().filter(ntcTransaction -> !Objects.equals(ntcTransaction.getNtcStatusEnum(), NtcStatusEnum.SUCCESS))
+                    .filter(ntcTransaction -> ntcTransaction.getLastTime().compareTo(date) > 0).collect(Collectors.toList());
+        }
+        return null;
     }
 }

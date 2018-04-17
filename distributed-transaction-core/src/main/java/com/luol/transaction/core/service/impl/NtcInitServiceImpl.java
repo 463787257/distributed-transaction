@@ -59,21 +59,19 @@ public class NtcInitServiceImpl implements NtcInitService {
      */
     private void loadSpiSupport(NtcConfig ntcConfig) {
         //spi  serialize
-        final SerializeEnum serializeEnum = SerializeEnum.acquire(ntcConfig.getSerializer());
         final ServiceLoader<ObjectSerializer> objectSerializers = ServiceLoader.load(ObjectSerializer.class);
 
         final Optional<ObjectSerializer> serializer = StreamSupport.stream(objectSerializers.spliterator(), false)
-                .filter(objectSerializer -> Objects.equals(objectSerializer.getScheme(), serializeEnum)).findFirst();
+                .filter(objectSerializer -> Objects.equals(objectSerializer.getScheme(), ntcConfig.getSerializer())).findFirst();
 
         serializer.ifPresent(coordinatorService::setSerializer);
 
         //spi  repository support
-        final RepositorySupportEnum repositorySupportEnum = RepositorySupportEnum.acquire(ntcConfig.getRepositorySupport());
         final ServiceLoader<CoordinatorRepository> recoverRepositories = ServiceLoader.load(CoordinatorRepository.class);
 
 
         final Optional<CoordinatorRepository> repositoryOptional = StreamSupport.stream(recoverRepositories.spliterator(), false)
-                .filter(recoverRepository -> Objects.equals(recoverRepository.getScheme(), repositorySupportEnum)).findFirst();
+                .filter(recoverRepository -> Objects.equals(recoverRepository.getScheme(), ntcConfig.getRepositorySupport())).findFirst();
 
         //将CoordinatorRepository实现注入到spring容器
         repositoryOptional.ifPresent(repository -> {

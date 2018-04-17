@@ -17,7 +17,7 @@ import org.apache.commons.lang3.math.NumberUtils;
  */
 public enum PatternEnum implements BaseEnum {
 
-    NOTICE_ROLLBACK("优先通知---不成功再回滚", NumberUtils.INTEGER_ZERO),
+    NOTIFY_ROLLBACK("先通知---不成功再回滚", NumberUtils.INTEGER_ZERO),
     ONLY_ROLLBACK("不通知---直接回滚", NumberUtils.INTEGER_ONE);
 
     private String content;
@@ -48,6 +48,6 @@ public enum PatternEnum implements BaseEnum {
         Optional<PatternEnum> enums = Arrays.stream(PatternEnum.values())
                 .filter(v -> Objects.equals(v.getContent(), object) || Objects.equals(v.getValue(), object))
                 .findFirst();
-        return enums.orElse(PatternEnum.NOTICE_ROLLBACK);
+        return enums.orElse(PatternEnum.NOTIFY_ROLLBACK);
     }
 }

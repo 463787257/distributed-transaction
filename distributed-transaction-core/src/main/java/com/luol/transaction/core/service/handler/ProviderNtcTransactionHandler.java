@@ -1,8 +1,6 @@
 package com.luol.transaction.core.service.handler;
 
 import com.luol.transaction.common.bean.context.NtcTransactionContext;
-import com.luol.transaction.common.enums.EventTypeEnum;
-import com.luol.transaction.common.enums.NtcRoleEnum;
 import com.luol.transaction.common.enums.NtcStatusEnum;
 import com.luol.transaction.common.enums.PatternEnum;
 import com.luol.transaction.common.utils.DefaultValueUtils;
@@ -39,22 +37,22 @@ public class ProviderNtcTransactionHandler implements NtcTransactionHandler {
      */
     @Override
     public Object handler(ProceedingJoinPoint point, NtcTransactionContext ntcTransactionContext) throws Throwable {
-        if (Objects.equals(ntcTransactionContext.getPatternEnum(), PatternEnum.NOTICE_ROLLBACK)) {
+        if (Objects.equals(ntcTransactionContext.getPatternEnum(), PatternEnum.NOTIFY_ROLLBACK)) {
             //更新日志 -- 通知
-            ntcTransactionManager.addLogs(NtcRoleEnum.PROVIDER, ntcTransactionContext, NtcStatusEnum.TRY, EventTypeEnum.SAVE);
+            //ntcTransactionManager.addLogs(NtcRoleEnum.PROVIDER, ntcTransactionContext, NtcStatusEnum.TRY, EventTypeEnum.SAVE);
             Object proceed = point.proceed();
-            ntcTransactionManager.addLogs(NtcRoleEnum.PROVIDER, ntcTransactionContext, NtcStatusEnum.SUCCESS, EventTypeEnum.UPDATE);
+            //ntcTransactionManager.addLogs(NtcRoleEnum.PROVIDER, ntcTransactionContext, NtcStatusEnum.SUCCESS, EventTypeEnum.UPDATE);
             return proceed;
         } else {
             if (Objects.equals(ntcTransactionContext.getNtcStatusEnum(), NtcStatusEnum.CANCEL)) {
                 //更新日志 -- cancel
-                ntcTransactionManager.addLogs(NtcRoleEnum.PROVIDER, ntcTransactionContext, NtcStatusEnum.CANCEL, EventTypeEnum.UPDATE);
+                //ntcTransactionManager.addLogs(NtcRoleEnum.PROVIDER, ntcTransactionContext, NtcStatusEnum.CANCEL, EventTypeEnum.UPDATE);
                 ntcTransactionManager.cancel(point);
-                ntcTransactionManager.addLogs(NtcRoleEnum.PROVIDER, ntcTransactionContext, NtcStatusEnum.SUCCESS, EventTypeEnum.UPDATE);
+                //ntcTransactionManager.addLogs(NtcRoleEnum.PROVIDER, ntcTransactionContext, NtcStatusEnum.FAIL, EventTypeEnum.UPDATE);
             } else {
-                ntcTransactionManager.addLogs(NtcRoleEnum.PROVIDER, ntcTransactionContext, NtcStatusEnum.TRY, EventTypeEnum.SAVE);
+                //ntcTransactionManager.addLogs(NtcRoleEnum.PROVIDER, ntcTransactionContext, NtcStatusEnum.TRY, EventTypeEnum.SAVE);
                 Object proceed = point.proceed();
-                ntcTransactionManager.addLogs(NtcRoleEnum.PROVIDER, ntcTransactionContext, NtcStatusEnum.SUCCESS, EventTypeEnum.UPDATE);
+                //ntcTransactionManager.addLogs(NtcRoleEnum.PROVIDER, ntcTransactionContext, NtcStatusEnum.SUCCESS, EventTypeEnum.UPDATE);
                 return proceed;
             }
         }

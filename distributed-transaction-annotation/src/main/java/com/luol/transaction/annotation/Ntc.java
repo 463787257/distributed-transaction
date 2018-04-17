@@ -22,7 +22,7 @@ public @interface Ntc {
     /**
      * 选用模式
      * */
-    PatternEnum pattern() default PatternEnum.NOTICE_ROLLBACK;
+    PatternEnum pattern() default PatternEnum.NOTIFY_ROLLBACK;
 
     /**
      * 回滚方法名称 --- 默认是正常方法名+Cancel

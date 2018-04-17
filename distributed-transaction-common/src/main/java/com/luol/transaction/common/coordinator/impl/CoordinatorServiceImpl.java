@@ -20,13 +20,21 @@ import com.luol.transaction.common.spi.CoordinatorRepository;
 import com.luol.transaction.common.utils.InvokeUtils;
 import com.luol.transaction.common.utils.SpringBeanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author luol
@@ -51,6 +59,8 @@ public class CoordinatorServiceImpl implements CoordinatorService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CoordinatorServiceImpl.class);
 
+    private ScheduledThreadPoolExecutor pool;
+
     /**
      * 启动本地补偿事务，根据配置是否进行补偿
      *
@@ -60,7 +70,54 @@ public class CoordinatorServiceImpl implements CoordinatorService {
     public void start() throws Exception {
         coordinatorRepository = SpringBeanUtils.getInstance()
                 .getBean(CoordinatorRepository.class);
-        coordinatorRepository.init(ntcConfig.getModelName());
+        coordinatorRepository.init(ntcConfig);
+        //如果需要自动恢复 开启线程 调度线程池，进行恢复
+        if (ntcConfig.getNeedRecover()) {
+            scheduledAutoRecover();
+        }
+    }
+
+    /**
+     * 开启线程池定时查询未完成任务
+     * */
+    private void scheduledAutoRecover() {
+        pool = new ScheduledThreadPoolExecutor(1);
+        pool.scheduleAtFixedRate(() -> {
+            LOGGER.warn("定时查询失败事物===开始");
+            //第一步，查询所有1小时内未更新的失败事物
+            Date date = new Date();
+            Date minutes = DateUtils.addMinutes(date, -1);
+            List<NtcTransaction> allNeedCompensation = coordinatorRepository.findAllNeedCompensation(minutes);
+            LOGGER.warn("allNeedCompensation:{}", JSON.toJSONString(allNeedCompensation));
+            if (!CollectionUtils.isEmpty(allNeedCompensation)) {
+                allNeedCompensation.forEach(ntcTransaction -> {
+                    try {
+                        //第二步，校验事物恢复表中是否存在，不存在
+                        Boolean compensationTask = coordinatorRepository.isExitCompensationTask(ntcTransaction.getTransID());
+                        if (!compensationTask) {
+                            coordinatorRepository.addCompensationTask(ntcTransaction.getTransID());
+                            ntcTransaction.setCurrentRetryCounts(ntcTransaction.getCurrentRetryCounts() - 1);
+                            //发送事件
+                            MessageEntity messageEntity = new MessageEntity();
+                            messageEntity.setAsynchronousTypeEnums(AsynchronousTypeEnums.INVOCATION);
+                            messageEntity.setNtcTransaction(ntcTransaction);
+                            sendMessage(messageEntity);
+                        }
+                    } catch (Exception e) {
+                        LOGGER.warn("定时补偿发生异常，当前数据信息：" + JSON.toJSONString(ntcTransaction));
+                        LOGGER.warn("异常信息：", e);
+                    }
+                });
+            }
+            LOGGER.warn("定时执行失败事物===结束");
+        }, ntcConfig.getScheduledDelay(), ntcConfig.getScheduledDelay(), TimeUnit.SECONDS);
+    }
+
+    @PreDestroy
+    private void destroy() {
+        if (Objects.nonNull(pool)) {
+            pool.shutdown();
+        }
     }
 
     /**
@@ -79,7 +136,7 @@ public class CoordinatorServiceImpl implements CoordinatorService {
     }
 
     /**
-     * 根据事务id获取NtcTransaction
+     * 根据事务id获取本model对应的NtcTransaction
      *
      * @param transID 事务id
      * @return NtcTransaction
@@ -211,13 +268,15 @@ public class CoordinatorServiceImpl implements CoordinatorService {
     @Override
     public Boolean handlerInvocation(NtcTransaction transaction) {
         if (Objects.isNull(transaction) || CollectionUtils.isEmpty(transaction.getRpcNtcInvocations())) {
-            return Boolean.TRUE;
-        }
-        //校验事物状态，排除已成功  +++  todo 延迟队列  ---  定时查库，定时发送消息，防止遗漏
-        NtcTransaction ntcTransaction = findByTransID(transaction.getTransID());
-        if (Objects.nonNull(ntcTransaction) && Objects.equals(ntcTransaction.getNtcStatusEnum(), NtcStatusEnum.SUCCESS)) {
+            transaction.setNtcStatusEnum(NtcStatusEnum.SUCCESS);
+            update(transaction);
             return Boolean.FALSE;
         }
+        //校验事物状态，排除已成功
+        /*NtcTransaction ntcTransaction = getByTransIDAndName(transaction.getTransID(), transaction.getTargetClass(), transaction.getTargetMethod());
+        if (Objects.nonNull(ntcTransaction) && Objects.equals(ntcTransaction.getNtcStatusEnum(), NtcStatusEnum.SUCCESS)) {
+            return Boolean.FALSE;
+        }*/
         try {
             NtcTransactionContext context = new NtcTransactionContext();
             context.setTransID(transaction.getTransID());
@@ -225,18 +284,22 @@ public class CoordinatorServiceImpl implements CoordinatorService {
             if (bool) {
                 context.setNtcStatusEnum(NtcStatusEnum.CANCEL);
                 context.setPatternEnum(PatternEnum.ONLY_ROLLBACK);
-                TransactionContextLocal.getInstance().set(context);
             } else {
                 context.setNtcStatusEnum(NtcStatusEnum.NOTIFY);
-                context.setPatternEnum(PatternEnum.NOTICE_ROLLBACK);
+                context.setPatternEnum(PatternEnum.NOTIFY_ROLLBACK);
                 context.setNtcRoleEnum(NtcRoleEnum.LOCAL);
-                TransactionContextLocal.getInstance().set(context);
             }
+            TransactionContextLocal.getInstance().set(context);
             if (!bool && transaction.getCurrentRetryCounts() > transaction.getMaxRetryCounts()) {
                 transaction.setPatternEnum(PatternEnum.ONLY_ROLLBACK);
+                transaction.setCurrentRetryCounts(NumberUtils.INTEGER_ONE);
+            } else {
+                if (bool && transaction.getCurrentRetryCounts() > ntcConfig.getMaxInvocationCancelNum()) {
+                    //cancel达到上限后，直接返回成功 todo
+                    return Boolean.FALSE;
+                }
+                transaction.setCurrentRetryCounts(transaction.getCurrentRetryCounts() + NumberUtils.INTEGER_ONE);
             }
-            transaction.setCurrentRetryCounts(transaction.getCurrentRetryCounts() + NumberUtils.INTEGER_ONE);
-            //todo 设置最大最大调用次数，不能一直调用吧
             Boolean flag = Boolean.FALSE;
             for (NtcInvocation ntcInvocation : transaction.getRpcNtcInvocations()) {
                 if (Objects.equals(ntcInvocation.getIsSuccess(), bool)) {
@@ -257,6 +320,9 @@ public class CoordinatorServiceImpl implements CoordinatorService {
                 messageEntity.setNtcTransaction(transaction);
                 final Boolean isSuccess = sendMessage(messageEntity);
                 return !isSuccess;
+            } else {
+                transaction.setNtcStatusEnum(NtcStatusEnum.SUCCESS);
+                update(transaction);
             }
             return flag;
         } finally {

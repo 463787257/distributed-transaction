@@ -1,6 +1,7 @@
 package com.luol.transaction.common.spi;
 
 import com.luol.transaction.common.bean.model.NtcTransaction;
+import com.luol.transaction.common.config.NtcConfig;
 import com.luol.transaction.common.enums.RepositorySupportEnum;
 import com.luol.transaction.common.exception.NtcException;
 import com.luol.transaction.common.serializer.ObjectSerializer;
@@ -64,10 +65,10 @@ public interface CoordinatorRepository {
     /**
      * 初始化操作
      *
-     * @param modelName  模块名称
+     * @param ntcConfig  配置
      * @throws NtcException 自定义异常
      */
-    void init(String modelName) throws NtcException;
+    void init(NtcConfig ntcConfig) throws NtcException;
 
     /**
      * 设置scheme
@@ -82,4 +83,25 @@ public interface CoordinatorRepository {
      * @param objectSerializer 序列化实现
      */
     void setSerializer(ObjectSerializer objectSerializer);
+
+    /**
+     * 添加记录正在补偿任务
+     * */
+    int addCompensationTask(String transID);
+
+    /**
+     * 查询补偿任务
+     *
+     * @param transID 事物ID
+     * @return NtcTransaction
+     * */
+    Boolean isExitCompensationTask(String transID);
+
+    /**
+     * 获取date之前失败的事物信息
+     *
+     * @param date 时间
+     * @return List<NtcTransaction>
+     * */
+    List<NtcTransaction> findAllNeedCompensation(Date date);
 }

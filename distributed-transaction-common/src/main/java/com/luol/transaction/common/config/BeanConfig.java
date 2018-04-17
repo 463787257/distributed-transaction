@@ -19,6 +19,11 @@ public class BeanConfig {
     @ConditionalOnMissingBean(NtcConfig.class)
     public NtcConfig ntcConfig() {
         //给默认的NtcConfig
-        return new NtcConfig();
+        NtcConfig ntcConfig = new NtcConfig();
+        NtcRedisConfig ntcRedisConfig = new NtcRedisConfig();
+        ntcRedisConfig.setHostName("47.94.147.107");
+        ntcRedisConfig.setPort(6379);
+        ntcConfig.setNtcRedisConfig(ntcRedisConfig);
+        return ntcConfig;
     }
 }
